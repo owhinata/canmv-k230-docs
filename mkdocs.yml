@@ -1,6 +1,6 @@
 site_name: CanMV K230 Guide
 site_description: CanMV K230 v1.1 セットアップ・使い方ガイド
-site_url: ""
+site_url: https://owhinata.github.io/canmv-k230-docs/
 repo_url: https://github.com/owhinata/canmv-k230-docs
 
 theme:
