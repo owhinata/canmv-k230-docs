@@ -153,7 +153,7 @@ iwlist wlan0 scan 2>&1 | head -30
 iwlist wlan0 frequency 2>&1
 ```
 
-K230 only supports 2.4GHz. Make sure you are not using a 5GHz SSID.
+The WLAN on the CanMV K230 only supports 2.4GHz. Make sure you are not using a 5GHz SSID.
 
 !!! example "Buffalo routers"
     | SSID Pattern | Band | K230 Support |

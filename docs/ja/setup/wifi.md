@@ -153,7 +153,7 @@ iwlist wlan0 scan 2>&1 | head -30
 iwlist wlan0 frequency 2>&1
 ```
 
-K230 は 2.4GHz のみ対応です。5GHz の SSID を設定していないか確認してください。
+CanMV K230 搭載の WLAN は 2.4GHz のみ対応です。5GHz の SSID を設定していないか確認してください。
 
 !!! example "Buffalo ルーターの場合"
     | SSID パターン | 周波数帯 | K230 対応 |
