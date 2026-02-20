@@ -7,10 +7,27 @@ A setup and usage guide for the CanMV K230 v1.1 board.
 | Item | Value |
 |------|-------|
 | Board | CanMV K230 v1.1 |
-| SoC | Kendryte K230 (RISC-V dual-core) |
-| OS | Linux canaan 5.10.4 (riscv64) |
+| SoC | Kendryte K230 |
+| RAM | 512 MB LPDDR3 |
 | WiFi Chip | Broadcom (bcmdhd driver, 2.4GHz only) |
 | Serial | USB via `/dev/ttyACM0` at 115200 baud |
+
+### Dual-Core Architecture
+
+The K230 features two Xuantie C908 (RISC-V 64-bit) cores in a heterogeneous configuration, each running a different OS.
+
+| | Big Core (CPU1) | Little Core (CPU0) |
+|------|----------------|-------------------|
+| Clock | 1.6 GHz | 800 MHz |
+| OS | RT-Smart (real-time OS) | Linux 5.10.4 |
+| Role | AI inference (KPU), media processing | System control, networking, user interaction |
+| Feature | RISC-V Vector 1.0 (128-bit) | Controls big core boot sequence |
+
+The two cores communicate via a shared filesystem (`/sharefs`).
+
+!!! info "KPU (AI Accelerator)"
+    Supports INT8/INT16 inference. Models in ONNX/TFLite format are compiled to kmodel using the nncase compiler.
+    Operators not supported by the KPU (e.g. softmax) are executed efficiently on the big core using RVV 1.0.
 
 ## Links
 
