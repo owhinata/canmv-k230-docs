@@ -46,25 +46,16 @@ sudo dd if=CanMV-K230_sdcard_v2.0_nncase_v2.10.0.img of=/dev/sdX bs=1M oflag=syn
 ## シリアル接続
 
 USB 接続すると、ホスト PC 上に `/dev/ttyACM0` が現れます。
-`expect` を使ってシリアルコンソールにアクセスできます。
+`picocom` を使ってシリアルコンソールにアクセスできます。
 
 ```sh
-expect -c '
-  log_user 1
-  set timeout 10
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "uname -a\r"
-  expect "]#"
-'
+picocom -b 115200 /dev/ttyACM0
 ```
 
-!!! tip "expect のインストール"
-    Debian/Ubuntu の場合: `sudo apt install expect`
+!!! tip "picocom のインストール"
+    Debian/Ubuntu の場合: `sudo apt install picocom`
+
+!!! info "picocom の終了"
+    `Ctrl-a Ctrl-x` で picocom を終了できます。
 
 ログインプロンプトが表示されたら、`root` でログインします（パスワードなし）。

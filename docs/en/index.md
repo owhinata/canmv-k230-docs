@@ -46,25 +46,16 @@ sudo dd if=CanMV-K230_sdcard_v2.0_nncase_v2.10.0.img of=/dev/sdX bs=1M oflag=syn
 ## Serial Connection
 
 When connected via USB, `/dev/ttyACM0` appears on the host PC.
-Use `expect` to access the serial console:
+Use `picocom` to access the serial console:
 
 ```sh
-expect -c '
-  log_user 1
-  set timeout 10
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "uname -a\r"
-  expect "]#"
-'
+picocom -b 115200 /dev/ttyACM0
 ```
 
-!!! tip "Installing expect"
-    On Debian/Ubuntu: `sudo apt install expect`
+!!! tip "Installing picocom"
+    On Debian/Ubuntu: `sudo apt install picocom`
+
+!!! info "Exiting picocom"
+    Press `Ctrl-a Ctrl-x` to exit picocom.
 
 If a login prompt appears, log in as `root` (no password).
