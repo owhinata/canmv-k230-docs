@@ -1,5 +1,3 @@
-# mkdocs-material 9.7.x+ adds "MkDocs 2.0 incompatible" warning. Pin to <9.7 to suppress.
-# Migrate to Zensical once zensical 0.x stabilizes (0.0.x generates broken .md hrefs).
-mkdocs>=1.6,<2.0
-mkdocs-material>=9.5,<9.7
+mkdocs>=1.6
+mkdocs-material>=9.5
 mkdocs-static-i18n>=1.2
