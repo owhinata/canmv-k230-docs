@@ -7,10 +7,27 @@ CanMV K230 v1.1 のセットアップと使い方をまとめたガイドです�
 | 項目 | 値 |
 |------|-----|
 | ボード | CanMV K230 v1.1 |
-| SoC | Kendryte K230 (RISC-V デュアルコア) |
-| OS | Linux canaan 5.10.4 (riscv64) |
+| SoC | Kendryte K230 |
+| RAM | 512 MB LPDDR3 |
 | WiFi チップ | Broadcom (bcmdhd ドライバ、2.4GHz のみ) |
 | シリアル接続 | USB 経由 `/dev/ttyACM0` 115200baud |
+
+### デュアルコア構成
+
+K230 は 2 つの Xuantie C908 (RISC-V 64-bit) コアを搭載し、それぞれ異なる OS が動作するヘテロジニアス構成です。
+
+| | Big コア (CPU1) | Little コア (CPU0) |
+|------|----------------|-------------------|
+| クロック | 1.6 GHz | 800 MHz |
+| OS | RT-Smart (リアルタイム OS) | Linux 5.10.4 |
+| 役割 | AI 推論 (KPU)、メディア処理 | システム制御、ネットワーク、ユーザー操作 |
+| 特徴 | RISC-V Vector 1.0 (128-bit) | Big コアの起動を制御 |
+
+両コア間は共有ファイルシステム (`/sharefs`) を通じて通信します。
+
+!!! info "KPU (AI アクセラレータ)"
+    INT8/INT16 推論に対応し、nncase コンパイラで ONNX/TFLite モデルを kmodel に変換して実行します。
+    KPU が対応しないオペレータ（softmax 等）は Big コアの RVV 1.0 で高速に処理されます。
 
 ## リンク集
 
