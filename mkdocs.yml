@@ -1,0 +1,64 @@
+site_name: CanMV K230 Guide
+site_description: CanMV K230 v1.1 セットアップ・使い方ガイド
+site_url: ""
+repo_url: https://github.com/ouwa-S/canmv-k230-docs
+
+theme:
+  name: material
+  language: ja
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: ダークモードに切り替え
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: ライトモードに切り替え
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: ja
+          name: 日本語
+          default: true
+          build: true
+        - locale: en
+          name: English
+          build: true
+
+nav:
+  - index.md
+  - セットアップ:
+      - setup/wifi.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - def_list
+  - toc:
+      permalink: true
