@@ -47,6 +47,7 @@ nav:
   - index.md
   - セットアップ:
       - setup/wifi.md
+      - setup/partition.md
 
 markdown_extensions:
   - admonition
