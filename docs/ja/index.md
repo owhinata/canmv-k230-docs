@@ -12,6 +12,34 @@ CanMV K230 v1.1 のセットアップと使い方をまとめたガイドです�
 | WiFi チップ | Broadcom (bcmdhd ドライバ、2.4GHz のみ) |
 | シリアル接続 | USB 経由 `/dev/ttyACM0` 115200baud |
 
+## リンク集
+
+### 公式ドキュメント・SDK
+
+- [K230 SDK (GitHub)](https://github.com/kendryte/k230_sdk) -- Linux + RT-Smart デュアル OS SDK
+- [K230 ドキュメント (GitHub)](https://github.com/kendryte/k230_docs) -- SDK リファレンスドキュメント
+- [K230 SDK ドキュメント (Web)](https://www.kendryte.com/k230/en/dev/index.html) -- ハードウェア設計ガイド・データシート・API リファレンス
+- [K230 Linux SDK (GitHub)](https://github.com/kendryte/k230_linux_sdk) -- Linux 専用 SDK（Debian / Ubuntu イメージ対応）
+
+### CanMV (MicroPython)
+
+- [CanMV K230 ファームウェア (GitHub)](https://github.com/kendryte/canmv_k230) -- MicroPython ファームウェア（リリースページからイメージをダウンロード可能）
+- [CanMV K230 ドキュメント (Web)](https://www.kendryte.com/k230_canmv/en/main/index.html) -- MicroPython API リファレンス・サンプル集
+
+### AI 開発
+
+- [nncase (GitHub)](https://github.com/kendryte/nncase) -- ONNX / TFLite モデルを KPU 用 kmodel に変換するコンパイラ
+- [K230 AI 開発チュートリアル](https://www.kendryte.com/ai_docs/en/dev/Development_Basics.html) -- モデル推論・AI2D 前処理・デプロイの解説
+- [K230 学習スクリプト (GitHub)](https://github.com/kendryte/K230_training_scripts) -- モデル学習からオンボード推論までの E2E サンプル
+
+### ハードウェア
+
+- [K230 製品ページ](https://www.kendryte.com/en/proDetail/230) -- 回路図・PCB データ・IOMUX ツール
+
+### ファームウェアダウンロード
+
+- [Canaan ファームウェア一覧](https://kendryte-download.canaan-creative.com/developer/k230/) -- CanMV / Debian / Ubuntu 等のビルド済みイメージ
+
 ## OS イメージの準備
 
 ### ダウンロード
