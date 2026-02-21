@@ -22,8 +22,8 @@ set(ARCH_FLAGS "-mcmodel=medany -march=rv64imafdcv -mabi=lp64d")
 # Compile flags: match SCons BuildApplication() output
 # -n --static: NMAGIC + static linking (from riscv64.py STATIC_FLAGS)
 # -DHAVE_CCONFIG_H: SDK convention for musl config detection
-set(CMAKE_C_FLAGS   "${ARCH_FLAGS} -Werror -Wall -O0 -g -gdwarf-2 -n --static -DHAVE_CCONFIG_H" CACHE STRING "" FORCE)
-set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -Werror -Wall -O0 -g -gdwarf-2 -n --static -DHAVE_CCONFIG_H" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS   "${ARCH_FLAGS} -Werror -Wall -O0 -g -gdwarf-2 -n --static -DHAVE_CCONFIG_H -DK230_BIGCORE" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -Werror -Wall -O0 -g -gdwarf-2 -n --static -DHAVE_CCONFIG_H -DK230_BIGCORE" CACHE STRING "" FORCE)
 
 # RT-Smart SDK includes (matches SCons sdk/rt-thread/SConscript)
 set(RTT_INCLUDE
