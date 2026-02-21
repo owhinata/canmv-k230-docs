@@ -1,5 +1,15 @@
+# MkDocs
 site/
+
+# Python
 __pycache__/
 .venv/
 *.pyc
+
+# K230 SDK build (created by scripts/build_sdk.sh)
+scripts/k230_sdk/
+scripts/toolchain/
+scripts/output/
+
+# OS
 .DS_Store
