@@ -48,6 +48,8 @@ nav:
   - セットアップ:
       - setup/wifi.md
       - setup/partition.md
+  - 開発:
+      - development/sdk_build.md
 
 markdown_extensions:
   - admonition
