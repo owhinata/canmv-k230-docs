@@ -11,5 +11,8 @@ k230_sdk/
 toolchain/
 output/
 
+# CMake out-of-source build
+build/
+
 # OS
 .DS_Store
