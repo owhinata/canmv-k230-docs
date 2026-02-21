@@ -22,7 +22,7 @@ Partition layout after expansion:
 !!! warning "Data backup recommended"
     This procedure recreates the rootfs partition (p3).
     Data is preserved because the start sector remains unchanged, but a backup is recommended.
-    **If you have data on fat32appfs (p4) that you want to keep, use the "p5 staging method" described later.**
+    fat32appfs (p4) data is protected by the p5 staging method.
 
 ## Partition Layout (Before → After)
 
@@ -90,18 +90,17 @@ expect -c '
     If `print` shows "Fix/Ignore?", the GPT backup header is not at the end of the disk.
     Send `Fix` to relocate it. If no prompt appears, the GPT is already correct.
 
-## Step 2: Recreate Partitions (parted interactive mode)
+## Step 2: Create Temporary p5 Partition
 
-!!! danger "parted -s (script mode) cannot be used"
-    `parted -s` refuses to delete partitions on the root filesystem.
-    Always use **interactive mode** and send "Yes" when prompted.
+To protect fat32appfs (p4) data on the K230, create a temporary p5 partition.
+By using the same start sector (134479872s) as the final p4,
+the vfat data on disk is preserved even after repartitioning in Step 4.
 
-!!! warning "Partition names must match the originals"
-    Always specify the **exact original partition name** in `parted`'s `mkpart` command.
-    For example, p4 must be named `fat32appfs`, not `sharefs`.
-    Using an incorrect name can corrupt fstab entries and boot scripts.
-
-Delete p4 (fat32appfs) → delete p3 (rootfs) → recreate p3 at 64GB → recreate p4 for remaining space.
+!!! tip "p5 and new p4 must share the same start sector"
+    Set p5's start sector (134479872s) identical to the final p4's start sector.
+    This ensures that after repartitioning in Step 4, the vfat data remains on disk
+    — only the GPT entry is updated.
+    If the sectors differ, data will be lost. **Always use 134479872s as the start sector.**
 
 ```sh
 expect -c '
@@ -117,27 +116,117 @@ expect -c '
   send "parted /dev/mmcblk1\r"
   expect "(parted)"
 
+  send "mkpart fat32appfs_tmp fat32 134479872s 100%\r"
+  expect "(parted)"
+
+  send "quit\r"
+  expect "]#"
+'
+```
+
+## Step 3: Format, Mount, and Copy Data to p5
+
+Copy all fat32appfs (p4) data to p5.
+This may take several minutes depending on the amount of data. Wait until the "]#" prompt returns.
+
+```sh
+expect -c '
+  log_user 1
+  set timeout 300
+  set serial [open /dev/ttyACM0 r+]
+  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
+  spawn -open $serial
+
+  send "\r"
+  expect "]#"
+
+  send "mkfs.vfat -F 32 /dev/mmcblk1p5\r"
+  expect "]#"
+
+  send "mkdir -p /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "mount /dev/mmcblk1p5 /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "cp -a /sharefs/. /mnt/p5_tmp/\r"
+  expect "]#"
+'
+```
+
+## Step 4: Unmount and Repartition
+
+Unmount p5 and /sharefs, then repartition with parted.
+The new p4 is created at the same start sector (134479872s) as p5,
+so the copied data is preserved as-is. No reformatting is needed.
+
+!!! danger "parted -s (script mode) cannot be used"
+    parted -s refuses to delete partitions on the root filesystem.
+    Always use **interactive mode**.
+
+!!! warning "Do not change the start sector 262144"
+    Changing the start sector of p3 (rootfs) will corrupt existing ext4 data.
+    **Always start from sector 262144s.**
+
+!!! warning "Partition names must match the originals"
+    Always specify the **exact original partition name** in parted's mkpart command.
+    For example, p4 must be named fat32appfs, not sharefs.
+    Using an incorrect name can corrupt fstab entries and boot scripts.
+
+```sh
+expect -c '
+  log_user 1
+  set timeout 120
+  set serial [open /dev/ttyACM0 r+]
+  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
+  spawn -open $serial
+
+  send "\r"
+  expect "]#"
+
+  send "umount /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "umount /sharefs\r"
+  expect "]#"
+
+  send "parted /dev/mmcblk1\r"
+  expect "(parted)"
+
+  # Delete p5
+  send "rm 5\r"
+  expect "(parted)"
+
   # Delete p4
   send "rm 4\r"
   expect "(parted)"
 
-  # Delete p3 (root FS warning appears)
+  # Delete p3 (Yes/No? + Ignore/Cancel? appear because rootfs is in use)
   send "rm 3\r"
-  expect -re "(Yes/No|\\(parted\\))"
-  if {[string match "*Yes*" $expect_out(0,string)]} {
-    send "Yes\r"
-    expect "(parted)"
+  expect -re "Yes/No\\?"
+  send "Yes\r"
+  expect {
+    -re "Ignore/Cancel\\?" {
+      send "Ignore\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
   }
 
-  # Recreate p3 (keep original start sector 262144, expand to 64GB)
+  # Recreate p3 (keep start sector 262144s, expand to 64GB)
   send "mkpart rootfs ext4 262144s 134479871s\r"
-  expect "(parted)"
+  expect {
+    -re "Ignore/Cancel\\?" {
+      send "Ignore\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
+  }
 
-  # Recreate p4 (all remaining space)
+  # Recreate p4 (same start sector as p5: 134479872s, all remaining space)
   send "mkpart fat32appfs fat32 134479872s 100%\r"
   expect "(parted)"
 
-  # Verify
   send "print\r"
   expect "(parted)"
 
@@ -146,13 +235,14 @@ expect -c '
 '
 ```
 
-!!! warning "Do not change the start sector 262144"
-    Changing the start sector of p3 (rootfs) will corrupt existing ext4 data.
-    **Always start from sector 262144s.**
+!!! info "About the Kernel Notification Failure Error"
+    If you see "Error: Partition(s) ... have been written, but we have been unable to inform the kernel",
+    select Ignore. The kernel will be notified when you reboot in Step 5.
 
-## Step 3: Reboot
+## Step 5: Reboot
 
 Reboot so the kernel recognizes the new partition table.
+Wait for boot to complete (approximately 35 seconds).
 
 ```sh
 expect -c '
@@ -166,11 +256,18 @@ expect -c '
   expect "]#"
 
   send "reboot\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+    timeout { puts "TIMEOUT: reboot did not complete"; exit 1 }
+  }
 '
 ```
 
-## Step 4: Expand rootfs (resize2fs)
+## Step 6: Expand rootfs (resize2fs)
 
 After rebooting, use `resize2fs` to expand the ext4 filesystem to the new partition size.
 **This can be done online (while mounted).**
@@ -197,49 +294,17 @@ Expected output on success:
 The filesystem on /dev/mmcblk1p3 is now 67108864 blocks long.
 ```
 
-## Step 5: Format fat32appfs
-
-Format p4 as FAT32.
-
-!!! warning "All fat32appfs data will be erased"
-    `mkfs.vfat` erases all data on p4. Back up any important files first.
-    **If fat32appfs has data you want to preserve, use the "p5 staging method" described in the next section.**
+## Step 7: Verify
 
 ```sh
 expect -c '
   log_user 1
-  set timeout 60
+  set timeout 30
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
-
-  send "umount /dev/mmcblk1p4\r"
-  expect "]#"
-
-  send "mkfs.vfat -F 32 /dev/mmcblk1p4\r"
-  expect "]#"
-'
-```
-
-## Step 6: Verify
-
-Reboot and confirm the final result.
-
-```sh
-expect -c '
-  log_user 1
-  set timeout 120
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "reboot\r"
   expect "]#"
 
   send "df -h\r"
@@ -258,59 +323,6 @@ Filesystem        Size  Used Avail Use% Mounted on
 !!! info "Auto-mount"
     `/sharefs` is automatically mounted at boot (configured in `/etc/fstab`).
 
-## p5 Staging Method (Preserving fat32appfs Data)
-
-If fat32appfs (p4) has data and **rootfs free space < fat32appfs used space**,
-copying to rootfs is not possible. Use a temporary p5 partition to preserve the data.
-
-!!! tip "Critical: p5 and new p4 must share the same start sector"
-    By setting p5's start sector (134479872s) identical to the final p4's start sector,
-    the vfat data is preserved on disk — only the GPT entry changes.
-    If the sectors differ, data will be lost. **Always use 134479872s as the start sector.**
-
-### p5 Staging Procedure
-
-**1. Create p5 as a temporary partition** (same start sector as the final p4)
-
-```sh
-# Run in parted interactive mode
-parted /dev/mmcblk1
-(parted) mkpart fat32appfs_tmp fat32 134479872s 100%
-(parted) quit
-```
-
-**2. Format p5, mount it, and copy fat32appfs data**
-
-```sh
-mkfs.vfat -F 32 /dev/mmcblk1p5
-mkdir -p /mnt/p5_tmp
-mount /dev/mmcblk1p5 /mnt/p5_tmp
-cp -a /sharefs/. /mnt/p5_tmp/
-```
-
-**3. Unmount and repartition**
-
-```sh
-umount /mnt/p5_tmp
-umount /sharefs
-```
-
-```sh
-# Run in parted interactive mode
-parted /dev/mmcblk1
-(parted) rm 5
-(parted) rm 4
-(parted) rm 3
-(parted) mkpart rootfs ext4 262144s 134479871s
-(parted) mkpart fat32appfs fat32 134479872s 100%
-(parted) quit
-```
-
-**4. Reboot and run resize2fs** (same as Step 3–4)
-
-Because p5 and the new p4 share the same start sector, the vfat data is already in place.
-There is no need to reformat the new p4.
-
 ## Troubleshooting
 
 ### resize2fs returns an error
@@ -321,16 +333,16 @@ e2fsck -f /dev/mmcblk1p3
 resize2fs /dev/mmcblk1p3
 ```
 
-### Partition size unchanged after Step 2
+### Partition size unchanged after Step 4
 
-Verify that the reboot in Step 3 completed. The kernel retains the old partition table until reboot.
+Verify that the reboot in Step 5 completed. The kernel retains the old partition table until reboot.
 
 ### parted shows "Error: Partition(s) 3, 4 on /dev/mmcblk1 have been written..."
 
 This message means the kernel could not be notified of the partition changes.
-**The reboot in Step 3 resolves this.** Running resize2fs/mkfs.vfat before the reboot is still effective.
+**The reboot in Step 5 resolves this.** Running resize2fs before the reboot is still effective.
 
 ### parted shows "Partition is being used" when deleting p3
 
-This warning appears because rootfs is mounted. Enter `Ignore` to continue.
+This warning appears because rootfs is mounted. Enter Yes to continue.
 The kernel will recognize the new partition table after the next reboot.

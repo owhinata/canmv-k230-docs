@@ -22,7 +22,7 @@ CanMV K230 のデフォルト GPT はセクタ 1,048,575（約 512MB）で打ち
 !!! warning "データバックアップを推奨"
     この手順では rootfs パーティション (p3) を再作成します。
     開始セクタを変更しないためデータは保護されますが、事前バックアップを推奨します。
-    **fat32appfs (p4) のデータを保持したい場合は、後述の「p5 ステージング方式」を使用してください。**
+    fat32appfs (p4) のデータは p5 ステージング方式により保護されます。
 
 ## パーティション構成（変更前→後）
 
@@ -91,18 +91,17 @@ expect -c '
     配置されていません（この手順が必要な状態です）。`Fix` を送信してバックアップヘッダを修正します。
     Fix/Ignore? が出ない場合は GPT は正常（既に拡張済み等）です。
 
-## Step 2: パーティション再作成（parted 対話モード）
+## Step 2: p5 一時パーティション作成
 
-!!! danger "parted -s（スクリプトモード）は使用不可"
-    `parted -s` はルートファイルシステム上のパーティション削除を拒否します。
-    必ず **対話モード** を使用し、"Yes" を送信してください。
+K230 の fat32appfs (p4) データを保護するため、p5 一時パーティションを作成します。
+p5 の開始セクタ（134479872s）を新 p4 と同一にすることで、
+Step 4 のパーティション再編後もディスク上の vfat データが保持されます。
 
-!!! warning "パーティション名は元の名前と一致させること"
-    `parted` の `mkpart` で指定する名前を **必ず元の名前に一致させてください**。
-    例えば p4 の名前は `fat32appfs` であり、`sharefs` に変更してはなりません。
-    誤った名前にすると fstab や起動スクリプトが破損する可能性があります。
-
-p4（fat32appfs）を削除 → p3（rootfs）を削除 → p3 を 64GB で再作成 → p4 を残り全部で再作成します。
+!!! tip "p5 と新 p4 の開始セクタを必ず一致させること"
+    p5 の開始セクタ（134479872s）と最終的な p4 の開始セクタを同一にします。
+    これにより、Step 4 でパーティション再編後もディスク上の vfat データが
+    保持されたまま GPT エントリのみ更新されます。
+    セクタがズレるとデータ消失するため、**必ず 134479872s** を使用してください。
 
 ```sh
 expect -c '
@@ -118,27 +117,117 @@ expect -c '
   send "parted /dev/mmcblk1\r"
   expect "(parted)"
 
+  send "mkpart fat32appfs_tmp fat32 134479872s 100%\r"
+  expect "(parted)"
+
+  send "quit\r"
+  expect "]#"
+'
+```
+
+## Step 3: p5 フォーマット・マウント・データコピー
+
+fat32appfs (p4) の全データを p5 にコピーします。
+データ量によって数分かかることがあります。コピー完了（"]#" 復帰）まで待機してください。
+
+```sh
+expect -c '
+  log_user 1
+  set timeout 300
+  set serial [open /dev/ttyACM0 r+]
+  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
+  spawn -open $serial
+
+  send "\r"
+  expect "]#"
+
+  send "mkfs.vfat -F 32 /dev/mmcblk1p5\r"
+  expect "]#"
+
+  send "mkdir -p /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "mount /dev/mmcblk1p5 /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "cp -a /sharefs/. /mnt/p5_tmp/\r"
+  expect "]#"
+'
+```
+
+## Step 4: アンマウント・パーティション再編
+
+p5 と /sharefs をアンマウントし、parted でパーティションを再編します。
+新しい p4 は p5 と同一の開始セクタ（134479872s）で作成するため、
+p5 のコピー済みデータがそのまま保持されます。フォーマットは不要です。
+
+!!! danger "parted -s（スクリプトモード）は使用不可"
+    parted -s はルートファイルシステム上のパーティション削除を拒否します。
+    必ず **対話モード** を使用してください。
+
+!!! warning "開始セクタ 262144 は変更するな"
+    p3（rootfs）の開始セクタを変更すると、既存の ext4 データが破壊されます。
+    **必ず 262144s から開始してください。**
+
+!!! warning "パーティション名は元の名前と一致させること"
+    parted の mkpart で指定する名前を **必ず元の名前に一致させてください**。
+    例えば p4 の名前は fat32appfs であり、sharefs に変更してはなりません。
+    誤った名前にすると fstab や起動スクリプトが破損する可能性があります。
+
+```sh
+expect -c '
+  log_user 1
+  set timeout 120
+  set serial [open /dev/ttyACM0 r+]
+  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
+  spawn -open $serial
+
+  send "\r"
+  expect "]#"
+
+  send "umount /mnt/p5_tmp\r"
+  expect "]#"
+
+  send "umount /sharefs\r"
+  expect "]#"
+
+  send "parted /dev/mmcblk1\r"
+  expect "(parted)"
+
+  # p5 削除
+  send "rm 5\r"
+  expect "(parted)"
+
   # p4 削除
   send "rm 4\r"
   expect "(parted)"
 
-  # p3 削除（ルートFS警告が出る）
+  # p3 削除（ルートFS使用中のため Yes/No? + Ignore/Cancel? が出る）
   send "rm 3\r"
-  expect -re "(Yes/No|\\(parted\\))"
-  if {[string match "*Yes*" $expect_out(0,string)]} {
-    send "Yes\r"
-    expect "(parted)"
+  expect -re "Yes/No\\?"
+  send "Yes\r"
+  expect {
+    -re "Ignore/Cancel\\?" {
+      send "Ignore\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
   }
 
-  # p3 再作成（開始セクタは元のまま 262144 を維持、64GB）
+  # p3 再作成（開始セクタ 262144s 維持、64GB）
   send "mkpart rootfs ext4 262144s 134479871s\r"
-  expect "(parted)"
+  expect {
+    -re "Ignore/Cancel\\?" {
+      send "Ignore\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
+  }
 
-  # p4 再作成（残り全部）
+  # p4 再作成（p5 と同一開始セクタ 134479872s、残り全部）
   send "mkpart fat32appfs fat32 134479872s 100%\r"
   expect "(parted)"
 
-  # 確認
   send "print\r"
   expect "(parted)"
 
@@ -147,13 +236,16 @@ expect -c '
 '
 ```
 
-!!! warning "開始セクタ 262144 は変更するな"
-    p3（rootfs）の開始セクタを変更すると、既存の ext4 データが破壊されます。
-    **必ず 262144s から開始してください。**
+!!! info "カーネル通知失敗エラーについて"
+    rm 3 や mkpart 後に
+    "Error: Partition(s) ... have been written, but we have been unable to inform the kernel"
+    が表示された場合、Ignore を選択してください。
+    カーネルへの通知は Step 5 の再起動で行われます。
 
-## Step 3: 再起動
+## Step 5: 再起動
 
 カーネルが新しいパーティションテーブルを認識するために再起動します。
+ブート完了（約 35 秒）まで待機します。
 
 ```sh
 expect -c '
@@ -167,11 +259,18 @@ expect -c '
   expect "]#"
 
   send "reboot\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+    timeout { puts "TIMEOUT: reboot did not complete"; exit 1 }
+  }
 '
 ```
 
-## Step 4: rootfs 拡張（resize2fs）
+## Step 6: rootfs 拡張（resize2fs）
 
 再起動後、`resize2fs` で ext4 ファイルシステムを新しいパーティションサイズまで拡張します。
 **マウント中（オンライン）でも実行可能です。**
@@ -198,49 +297,17 @@ expect -c '
 The filesystem on /dev/mmcblk1p3 is now 67108864 blocks long.
 ```
 
-## Step 5: fat32appfs フォーマット
-
-p4 を FAT32 でフォーマットします。
-
-!!! warning "fat32appfs のデータは消去されます"
-    `mkfs.vfat` は p4 の全データを消去します。必要なデータは事前にバックアップしてください。
-    **fat32appfs にデータが残っている場合は、次節の「p5 ステージング方式」を使用してください。**
+## Step 7: 確認
 
 ```sh
 expect -c '
   log_user 1
-  set timeout 60
+  set timeout 30
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
-
-  send "umount /dev/mmcblk1p4\r"
-  expect "]#"
-
-  send "mkfs.vfat -F 32 /dev/mmcblk1p4\r"
-  expect "]#"
-'
-```
-
-## Step 6: 確認
-
-再起動して最終確認します。
-
-```sh
-expect -c '
-  log_user 1
-  set timeout 120
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "reboot\r"
   expect "]#"
 
   send "df -h\r"
@@ -259,59 +326,6 @@ Filesystem        Size  Used Avail Use% Mounted on
 !!! info "自動マウント"
     `/sharefs` は起動時に自動マウントされます（`/etc/fstab` に設定済み）。
 
-## p5 ステージング方式（fat32appfs データ保護）
-
-fat32appfs (p4) にデータが残っており、かつ **rootfs の空き容量 < fat32appfs の使用量** の場合、
-rootfs への退避が不可能です。この場合、p5 一時パーティションを経由してデータを保護します。
-
-!!! tip "重要: p5 と新 p4 の開始セクタを一致させること"
-    p5 の開始セクタ（134479872s）と p4 再作成時の開始セクタを同一にすることで、
-    vfat データはディスク上に保持されたまま GPT エントリのみ変更できます。
-    セクタがズレるとデータ消失するため、**開始セクタは必ず 134479872s** を使用してください。
-
-### p5 ステージング手順
-
-**1. p5 を一時パーティションとして作成**（最終的な p4 と同じ開始セクタ）
-
-```sh
-# parted 対話モードで実行
-parted /dev/mmcblk1
-(parted) mkpart fat32appfs_tmp fat32 134479872s 100%
-(parted) quit
-```
-
-**2. p5 をフォーマット・マウントして fat32appfs のデータをコピー**
-
-```sh
-mkfs.vfat -F 32 /dev/mmcblk1p5
-mkdir -p /mnt/p5_tmp
-mount /dev/mmcblk1p5 /mnt/p5_tmp
-cp -a /sharefs/. /mnt/p5_tmp/
-```
-
-**3. アンマウント後にパーティション再編**
-
-```sh
-umount /mnt/p5_tmp
-umount /sharefs
-```
-
-```sh
-# parted 対話モードで実行
-parted /dev/mmcblk1
-(parted) rm 5
-(parted) rm 4
-(parted) rm 3
-(parted) mkpart rootfs ext4 262144s 134479871s
-(parted) mkpart fat32appfs fat32 134479872s 100%
-(parted) quit
-```
-
-**4. 再起動して resize2fs を実行**（Step 3〜4 と同様）
-
-p5 と新 p4 の開始セクタが一致しているため、vfat データは保持されたままです。
-新 p4 をフォーマットする必要はありません。
-
 ## トラブルシューティング
 
 ### resize2fs がエラーを返す場合
@@ -324,15 +338,15 @@ resize2fs /dev/mmcblk1p3
 
 ### パーティション変更後もサイズが変わらない
 
-Step 3 の再起動が完了していることを確認してください。
+Step 5 の再起動が完了していることを確認してください。
 カーネルは再起動するまで古いパーティションテーブルを保持します。
 
 ### parted で "Error: Partition(s) 3, 4 on /dev/mmcblk1 have been written..."
 
 このメッセージはカーネルにパーティション変更を通知できなかったことを示します。
-**Step 3 の再起動で解決します。** 再起動前に resize2fs/mkfs.vfat を実行しても正常に動作します。
+**Step 5 の再起動で解決します。** 再起動前に resize2fs を実行しても正常に動作します。
 
 ### parted で p3 削除時に "Partition is being used" 警告が出る
 
-rootfs がマウント中のため警告が出ます。`Ignore` で続行してください。
+rootfs がマウント中のため警告が出ます。Yes を選択して続行してください。
 再起動後にカーネルが新しいパーティションテーブルを認識します。
