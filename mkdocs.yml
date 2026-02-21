@@ -50,6 +50,7 @@ nav:
       - setup/partition.md
   - 開発:
       - development/sdk_build.md
+      - development/hello_world.md
 
 markdown_extensions:
   - admonition
