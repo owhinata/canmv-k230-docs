@@ -7,9 +7,9 @@ __pycache__/
 *.pyc
 
 # K230 SDK build (created by scripts/build_sdk.sh)
-scripts/k230_sdk/
-scripts/toolchain/
-scripts/output/
+k230_sdk/
+toolchain/
+output/
 
 # OS
 .DS_Store
