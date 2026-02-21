@@ -59,13 +59,19 @@ GPT が切り詰められている場合（Fix/Ignore? が表示された場合�
 ```sh
 expect -c '
   log_user 1
-  set timeout 30
+  set timeout 5
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "parted /dev/mmcblk1\r"
   expect "(parted)"
@@ -106,13 +112,19 @@ Step 4 のパーティション再編後もディスク上の vfat データが�
 ```sh
 expect -c '
   log_user 1
-  set timeout 60
+  set timeout 5
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "parted /dev/mmcblk1\r"
   expect "(parted)"
@@ -133,13 +145,19 @@ fat32appfs (p4) の全データを p5 にコピーします。
 ```sh
 expect -c '
   log_user 1
-  set timeout 300
+  set timeout 50
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "mkfs.vfat -F 32 /dev/mmcblk1p5\r"
   expect "]#"
@@ -177,13 +195,19 @@ p5 のコピー済みデータがそのまま保持されます。フォーマ�
 ```sh
 expect -c '
   log_user 1
-  set timeout 120
+  set timeout 5
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "umount /mnt/p5_tmp\r"
   expect "]#"
@@ -250,23 +274,22 @@ expect -c '
 ```sh
 expect -c '
   log_user 1
-  set timeout 120
+  set timeout 5
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
-
-  send "reboot\r"
   expect {
     -re "login:" {
       send "root\r"
       expect "]#"
     }
     "]#" { }
-    timeout { puts "TIMEOUT: reboot did not complete"; exit 1 }
   }
+
+  send "reboot\r"
+  sleep 1
 '
 ```
 
@@ -284,7 +307,13 @@ expect -c '
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "resize2fs /dev/mmcblk1p3\r"
   expect "]#"
@@ -302,13 +331,19 @@ The filesystem on /dev/mmcblk1p3 is now 67108864 blocks long.
 ```sh
 expect -c '
   log_user 1
-  set timeout 30
+  set timeout 5
   set serial [open /dev/ttyACM0 r+]
   fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
   spawn -open $serial
 
   send "\r"
-  expect "]#"
+  expect {
+    -re "login:" {
+      send "root\r"
+      expect "]#"
+    }
+    "]#" { }
+  }
 
   send "df -h\r"
   expect "]#"
