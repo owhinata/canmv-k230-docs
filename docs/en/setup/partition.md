@@ -51,31 +51,10 @@ The GPT backup header ends at sector 1,048,575, leaving the actual disk end (499
 4       134479872      499742719    174G    fat32appfs    ← all remaining space
 ```
 
-## Step 1: Check Current State
+## Step 1: Check Current State and Fix GPT
 
 Connect to the K230 serial console and confirm the current partition layout.
-
-```sh
-expect -c '
-  log_user 1
-  set timeout 30
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "parted /dev/mmcblk1 unit s print\r"
-  expect "]#"
-'
-```
-
-If `Last sector:` shows `1048575`, the GPT is truncated and this procedure is needed.
-
-## Step 2: Fix the GPT (parted interactive mode)
-
-Relocate the GPT backup header to the end of the disk.
+If the GPT is truncated (Fix/Ignore? appears), it is fixed at the same time.
 
 ```sh
 expect -c '
@@ -89,18 +68,29 @@ expect -c '
   expect "]#"
 
   send "parted /dev/mmcblk1\r"
-  expect -re "(Fix|Ignore)"
-  send "Fix\r"
   expect "(parted)"
+
+  send "print\r"
+  expect {
+    -re "Fix/Ignore\\?" {
+      send "Fix\r"
+      expect "(parted)"
+      send "print\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
+  }
+
   send "quit\r"
   expect "]#"
 '
 ```
 
-!!! info "About the Fix/Ignore prompt"
-    When `parted` starts, it asks "Fix/Ignore?". Entering `Fix` moves the GPT backup header to the correct location at the end of the disk.
+!!! info "About the Fix/Ignore? Prompt"
+    If `print` shows "Fix/Ignore?", the GPT backup header is not at the end of the disk.
+    Send `Fix` to relocate it. If no prompt appears, the GPT is already correct.
 
-## Step 3: Recreate Partitions (parted interactive mode)
+## Step 2: Recreate Partitions (parted interactive mode)
 
 !!! danger "parted -s (script mode) cannot be used"
     `parted -s` refuses to delete partitions on the root filesystem.
@@ -125,11 +115,7 @@ expect -c '
   expect "]#"
 
   send "parted /dev/mmcblk1\r"
-  expect -re "(Fix|\\(parted\\))"
-  if {[string match "*Fix*" $expect_out(0,string)]} {
-    send "Fix\r"
-    expect "(parted)"
-  }
+  expect "(parted)"
 
   # Delete p4
   send "rm 4\r"
@@ -164,7 +150,7 @@ expect -c '
     Changing the start sector of p3 (rootfs) will corrupt existing ext4 data.
     **Always start from sector 262144s.**
 
-## Step 4: Reboot
+## Step 3: Reboot
 
 Reboot so the kernel recognizes the new partition table.
 
@@ -184,7 +170,7 @@ expect -c '
 '
 ```
 
-## Step 5: Expand rootfs (resize2fs)
+## Step 4: Expand rootfs (resize2fs)
 
 After rebooting, use `resize2fs` to expand the ext4 filesystem to the new partition size.
 **This can be done online (while mounted).**
@@ -211,7 +197,7 @@ Expected output on success:
 The filesystem on /dev/mmcblk1p3 is now 67108864 blocks long.
 ```
 
-## Step 6: Format fat32appfs
+## Step 5: Format fat32appfs
 
 Format p4 as FAT32.
 
@@ -238,7 +224,7 @@ expect -c '
 '
 ```
 
-## Step 7: Verify
+## Step 6: Verify
 
 Reboot and confirm the final result.
 
@@ -320,7 +306,7 @@ parted /dev/mmcblk1
 (parted) quit
 ```
 
-**4. Reboot and run resize2fs** (same as Step 4–5)
+**4. Reboot and run resize2fs** (same as Step 3–4)
 
 Because p5 and the new p4 share the same start sector, the vfat data is already in place.
 There is no need to reformat the new p4.
@@ -335,14 +321,14 @@ e2fsck -f /dev/mmcblk1p3
 resize2fs /dev/mmcblk1p3
 ```
 
-### Partition size unchanged after Step 3
+### Partition size unchanged after Step 2
 
-Verify that the reboot in Step 4 completed. The kernel retains the old partition table until reboot.
+Verify that the reboot in Step 3 completed. The kernel retains the old partition table until reboot.
 
 ### parted shows "Error: Partition(s) 3, 4 on /dev/mmcblk1 have been written..."
 
 This message means the kernel could not be notified of the partition changes.
-**The reboot in Step 4 resolves this.** Running resize2fs/mkfs.vfat before the reboot is still effective.
+**The reboot in Step 3 resolves this.** Running resize2fs/mkfs.vfat before the reboot is still effective.
 
 ### parted shows "Partition is being used" when deleting p3
 
