@@ -51,31 +51,10 @@ GPT バックアップヘッダがセクタ 1,048,575 で終端しており、�
 4       134479872      499742719    174G    fat32appfs    ← 残り全部
 ```
 
-## Step 1: 現状確認
+## Step 1: 現状確認・GPT 修正
 
-K230 のシリアルコンソールに接続し、現在のパーティション構成を確認します。
-
-```sh
-expect -c '
-  log_user 1
-  set timeout 30
-  set serial [open /dev/ttyACM0 r+]
-  fconfigure $serial -mode 115200,n,8,1 -translation binary -buffering none
-  spawn -open $serial
-
-  send "\r"
-  expect "]#"
-
-  send "parted /dev/mmcblk1 unit s print\r"
-  expect "]#"
-'
-```
-
-`Last sector:` が `1048575` と表示される場合、GPT が切り詰められています（この手順が必要です）。
-
-## Step 2: GPT 修正（parted 対話モード）
-
-GPT バックアップヘッダをディスク末尾に移動します。
+K230 のシリアルコンソールに接続し、パーティション構成を確認します。
+GPT が切り詰められている場合（Fix/Ignore? が表示された場合）は同時に修正します。
 
 ```sh
 expect -c '
@@ -89,18 +68,30 @@ expect -c '
   expect "]#"
 
   send "parted /dev/mmcblk1\r"
-  expect -re "(Fix|Ignore)"
-  send "Fix\r"
   expect "(parted)"
+
+  send "print\r"
+  expect {
+    -re "Fix/Ignore\\?" {
+      send "Fix\r"
+      expect "(parted)"
+      send "print\r"
+      expect "(parted)"
+    }
+    "(parted)" { }
+  }
+
   send "quit\r"
   expect "]#"
 '
 ```
 
-!!! info "Fix/Ignore プロンプトについて"
-    `parted` 起動時に "Fix/Ignore?" と聞かれます。`Fix` を入力することで GPT バックアップヘッダがディスク末尾に修正されます。
+!!! info "Fix/Ignore? プロンプトについて"
+    `print` 実行時に "Fix/Ignore?" と表示された場合、GPT バックアップヘッダがディスク末尾に
+    配置されていません（この手順が必要な状態です）。`Fix` を送信してバックアップヘッダを修正します。
+    Fix/Ignore? が出ない場合は GPT は正常（既に拡張済み等）です。
 
-## Step 3: パーティション再作成（parted 対話モード）
+## Step 2: パーティション再作成（parted 対話モード）
 
 !!! danger "parted -s（スクリプトモード）は使用不可"
     `parted -s` はルートファイルシステム上のパーティション削除を拒否します。
@@ -125,11 +116,7 @@ expect -c '
   expect "]#"
 
   send "parted /dev/mmcblk1\r"
-  expect -re "(Fix|\\(parted\\))"
-  if {[string match "*Fix*" $expect_out(0,string)]} {
-    send "Fix\r"
-    expect "(parted)"
-  }
+  expect "(parted)"
 
   # p4 削除
   send "rm 4\r"
@@ -164,7 +151,7 @@ expect -c '
     p3（rootfs）の開始セクタを変更すると、既存の ext4 データが破壊されます。
     **必ず 262144s から開始してください。**
 
-## Step 4: 再起動
+## Step 3: 再起動
 
 カーネルが新しいパーティションテーブルを認識するために再起動します。
 
@@ -184,7 +171,7 @@ expect -c '
 '
 ```
 
-## Step 5: rootfs 拡張（resize2fs）
+## Step 4: rootfs 拡張（resize2fs）
 
 再起動後、`resize2fs` で ext4 ファイルシステムを新しいパーティションサイズまで拡張します。
 **マウント中（オンライン）でも実行可能です。**
@@ -211,7 +198,7 @@ expect -c '
 The filesystem on /dev/mmcblk1p3 is now 67108864 blocks long.
 ```
 
-## Step 6: fat32appfs フォーマット
+## Step 5: fat32appfs フォーマット
 
 p4 を FAT32 でフォーマットします。
 
@@ -238,7 +225,7 @@ expect -c '
 '
 ```
 
-## Step 7: 確認
+## Step 6: 確認
 
 再起動して最終確認します。
 
@@ -320,7 +307,7 @@ parted /dev/mmcblk1
 (parted) quit
 ```
 
-**4. 再起動して resize2fs を実行**（Step 4〜5 と同様）
+**4. 再起動して resize2fs を実行**（Step 3〜4 と同様）
 
 p5 と新 p4 の開始セクタが一致しているため、vfat データは保持されたままです。
 新 p4 をフォーマットする必要はありません。
@@ -337,13 +324,13 @@ resize2fs /dev/mmcblk1p3
 
 ### パーティション変更後もサイズが変わらない
 
-Step 4 の再起動が完了していることを確認してください。
+Step 3 の再起動が完了していることを確認してください。
 カーネルは再起動するまで古いパーティションテーブルを保持します。
 
 ### parted で "Error: Partition(s) 3, 4 on /dev/mmcblk1 have been written..."
 
 このメッセージはカーネルにパーティション変更を通知できなかったことを示します。
-**Step 4 の再起動で解決します。** 再起動前に resize2fs/mkfs.vfat を実行しても正常に動作します。
+**Step 3 の再起動で解決します。** 再起動前に resize2fs/mkfs.vfat を実行しても正常に動作します。
 
 ### parted で p3 削除時に "Partition is being used" 警告が出る
 
