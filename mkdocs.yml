@@ -51,6 +51,7 @@ nav:
   - 開発:
       - development/sdk_build.md
       - development/rtsmart_boot.md
+      - development/usb_cdc_ether.md
       - development/hello_world.md
 
 markdown_extensions:
