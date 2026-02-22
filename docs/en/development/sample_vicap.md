@@ -36,6 +36,28 @@ These files are copied from the SDK:
 - `sample_vicap.c` from `k230_sdk/src/big/mpp/userapps/sample/sample_vicap/`
 - `vo_test_case.c`, `vo_test_case.h`, `vo_bind_test.c` from `k230_sdk/src/big/mpp/userapps/sample/sample_vo/`
 
+## Processing Flow
+
+The application follows this pipeline:
+
+```
+Sensor → VICAP (dev) → VICAP (chn) → [GDMA rotation] → VO (layer) → Display
+```
+
+### Initialization Sequence
+
+1. **Parse arguments** — configure device/channel parameters
+2. **Query connector info** — get display resolution
+3. **Query sensor info** — get camera resolution
+4. **Set VICAP device attributes** — configure input, ISP pipeline, work mode
+5. **Initialize VO connector** — set up display hardware
+6. **Initialize VB (Video Buffer)** — allocate buffer pools
+7. **Set VICAP channel attributes** — configure output format, size, crop
+8. **Bind VICAP to VO** — connect capture output to display layers (optionally via GDMA for rotation)
+9. **Configure VO layers** — set display layer sizes, positions, rotation
+10. **Start VICAP stream** — begin capture
+11. **Enable VO** — start display output
+
 ## Build Steps
 
 ### 1. Configure
@@ -82,18 +104,19 @@ The `apps/sample_vicap/CMakeLists.txt` handles:
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-mode <n>` | Work mode: 0=online, 1=offline, 2=sw_tile | 0 |
-| `-conn <n>` | Connector: 0=HX8377, 1=LT9611-1080p60, 2=LT9611-1080p30, 3=ST7701, 4=ILI9806 | 0 |
+| `-conn <n>` | Connector type (see [`-conn` Details](#-conn-details)) | 0 |
 
 ### Per-Device Options (after `-dev <n>`)
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-dev <n>` | VICAP device ID (0, 1, 2) | 0 |
-| `-sensor <n>` | Sensor type (see SDK sensor list) | — |
+| `-sensor <n>` | Sensor type (see [`-sensor` (OV5647) Details](#-sensor-ov5647-details)) | — |
 | `-ae <0\|1>` | Enable/disable AE | 1 |
 | `-awb <0\|1>` | Enable/disable AWB | 1 |
 | `-hdr <0\|1>` | Enable/disable HDR | 0 |
 | `-dw <0\|1>` | Enable dewarp | 0 |
+| `-mirror <n>` | Mirror: 0=none, 1=horizontal, 2=vertical, 3=both | 0 |
 
 ### Per-Channel Options (after `-chn <n>`)
 
@@ -111,31 +134,49 @@ The `apps/sample_vicap/CMakeLists.txt` handles:
 ### Example
 
 ```bash
-# OV9732 sensor, 640x480 output, 90-degree rotation, preview enabled
-./sample_vicap -mode 0 -dev 0 -sensor 0 -chn 0 -ow 640 -oh 480 -preview 1 -rotation 1
+# OV5647 (CSI0), 1920x1080 output, HDMI 1080p60 connector
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+
+# OV5647 (CSI0), 1280x720 output, HDMI 720p60 connector
+./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -ow 1280 -oh 720 -preview 1
 ```
 
-## Processing Flow
+### `-conn` Details
 
-The application follows this pipeline:
+| Value | Chip | Interface | Resolution | FPS |
+|-------|------|-----------|------------|-----|
+| 0 | HX8399 | MIPI DSI 4-lane LCD | 1080x1920 | 30 |
+| 1 | LT9611 | HDMI (MIPI-to-HDMI bridge) | 1920x1080 | 60 |
+| 2 | LT9611 | HDMI (MIPI-to-HDMI bridge) | 1920x1080 | 30 |
+| 3 | ST7701 | MIPI DSI 2-lane LCD | 480x800 | 30 |
+| 4 | ILI9806 | MIPI DSI 2-lane LCD | 480x800 | 30 |
+| 5 | LT9611 | HDMI (MIPI-to-HDMI bridge) | 1280x720 | 60 |
+| 6 | LT9611 | HDMI (MIPI-to-HDMI bridge) | 1280x720 | 30 |
+| 7 | LT9611 | HDMI (MIPI-to-HDMI bridge) | 640x480 | 60 |
 
-```
-Sensor → VICAP (dev) → VICAP (chn) → [GDMA rotation] → VO (layer) → Display
-```
+### `-sensor` (OV5647) Details
 
-### Initialization Sequence
+All modes use 10-bit Linear, MIPI CSI 2-lane.
 
-1. **Parse arguments** — configure device/channel parameters
-2. **Query connector info** — get display resolution
-3. **Query sensor info** — get camera resolution
-4. **Set VICAP device attributes** — configure input, ISP pipeline, work mode
-5. **Initialize VO connector** — set up display hardware
-6. **Initialize VB (Video Buffer)** — allocate buffer pools
-7. **Set VICAP channel attributes** — configure output format, size, crop
-8. **Bind VICAP to VO** — connect capture output to display layers (optionally via GDMA for rotation)
-9. **Configure VO layers** — set display layer sizes, positions, rotation
-10. **Start VICAP stream** — begin capture
-11. **Enable VO** — start display output
+| Value | Resolution | FPS | CSI Port | Notes |
+|-------|------------|-----|----------|-------|
+| 21 | 1920x1080 | 30 | — | Legacy (no CSI port specified) |
+| 22 | 2592x1944 | 10 | — | Full resolution, legacy |
+| 23 | 640x480 | 90 | — | Legacy |
+| 24 | 1920x1080 | 30 | CSI0 | |
+| 27 | 1920x1080 | 30 | CSI1 | |
+| 28 | 1920x1080 | 30 | CSI2 | |
+| 37 | 1920x1080 | 30 | CSI0 | V2 |
+| 38 | 1920x1080 | 30 | CSI1 | V2 |
+| 39 | 1920x1080 | 30 | CSI2 | V2 |
+| 41 | 640x480 | 90 | CSI1 | |
+| 42 | 1280x720 | 60 | CSI1 | |
+| 43 | 1280x960 | 45 | CSI1 | |
+| 44 | 1280x720 | 60 | CSI0 | |
+| 45 | 1280x960 | 45 | CSI0 | |
+| 46 | 640x480 | 90 | CSI2 | |
+| 47 | 1280x720 | 60 | CSI2 | |
+| 48 | 1280x960 | 45 | CSI2 | |
 
 ### Interactive Commands
 
@@ -159,16 +200,12 @@ While running, the application accepts keyboard commands:
 scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
 ```
 
-!!! warning "About /sharefs/"
-    The correct destination is `/sharefs/sample_vicap`, **not** `/root/sharefs/sample_vicap`.
-    `/sharefs/` is a vfat partition (`/dev/mmcblk1p4`) directly accessible from the bigcore.
-
 ### Run on the K230 bigcore (msh)
 
 On the K230 serial console (ACM1), run:
 
 ```
-msh /> /sharefs/sample_vicap -mode 0 -dev 0 -sensor 0 -chn 0 -ow 640 -oh 480 -preview 1 -rotation 1
+msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
 ```
 
 !!! tip "Serial connection"

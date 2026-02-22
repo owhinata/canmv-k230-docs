@@ -36,6 +36,28 @@
 - `sample_vicap.c`: `k230_sdk/src/big/mpp/userapps/sample/sample_vicap/`
 - `vo_test_case.c`, `vo_test_case.h`, `vo_bind_test.c`: `k230_sdk/src/big/mpp/userapps/sample/sample_vo/`
 
+## 処理フロー
+
+アプリケーションは以下のパイプラインに沿って動作します:
+
+```
+センサー → VICAP (dev) → VICAP (chn) → [GDMA 回転] → VO (layer) → ディスプレイ
+```
+
+### 初期化シーケンス
+
+1. **引数のパース** — デバイス/チャネルパラメータの設定
+2. **コネクタ情報の取得** — ディスプレイ解像度の取得
+3. **センサー情報の取得** — カメラ解像度の取得
+4. **VICAP デバイス属性の設定** — 入力、ISP パイプライン、動作モードの設定
+5. **VO コネクタの初期化** — ディスプレイハードウェアのセットアップ
+6. **VB (Video Buffer) の初期化** — バッファプールの確保
+7. **VICAP チャネル属性の設定** — 出力フォーマット、サイズ、クロップの設定
+8. **VICAP と VO のバインド** — キャプチャ出力をディスプレイレイヤーに接続（オプションで GDMA 経由の回転）
+9. **VO レイヤーの設定** — ディスプレイレイヤーのサイズ、位置、回転の設定
+10. **VICAP ストリームの開始** — キャプチャ開始
+11. **VO の有効化** — ディスプレイ出力の開始
+
 ## ビルド手順
 
 ### 1. 設定
@@ -82,18 +104,19 @@ sample_vicap: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `-mode <n>` | 動作モード: 0=online, 1=offline, 2=sw_tile | 0 |
-| `-conn <n>` | コネクタ: 0=HX8377, 1=LT9611-1080p60, 2=LT9611-1080p30, 3=ST7701, 4=ILI9806 | 0 |
+| `-conn <n>` | コネクタタイプ（[`-conn` 詳細](#-conn-詳細)参照） | 0 |
 
 ### デバイスオプション（`-dev <n>` の後）
 
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `-dev <n>` | VICAP デバイス ID (0, 1, 2) | 0 |
-| `-sensor <n>` | センサータイプ（SDK のセンサーリスト参照） | — |
+| `-sensor <n>` | センサータイプ（[`-sensor` (OV5647) 詳細](#-sensor-ov5647-詳細)参照） | — |
 | `-ae <0\|1>` | AE の有効/無効 | 1 |
 | `-awb <0\|1>` | AWB の有効/無効 | 1 |
 | `-hdr <0\|1>` | HDR の有効/無効 | 0 |
 | `-dw <0\|1>` | Dewarp の有効化 | 0 |
+| `-mirror <n>` | ミラー: 0=なし, 1=水平, 2=垂直, 3=両方 | 0 |
 
 ### チャネルオプション（`-chn <n>` の後）
 
@@ -111,31 +134,49 @@ sample_vicap: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 ### 使用例
 
 ```bash
-# OV9732 センサー、640x480 出力、90度回転、プレビュー有効
-./sample_vicap -mode 0 -dev 0 -sensor 0 -chn 0 -ow 640 -oh 480 -preview 1 -rotation 1
+# OV5647 (CSI0)、1920x1080 出力、HDMI 1080p60 コネクタ
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+
+# OV5647 (CSI0)、1280x720 出力、HDMI 720p60 コネクタ
+./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -ow 1280 -oh 720 -preview 1
 ```
 
-## 処理フロー
+### `-conn` 詳細
 
-アプリケーションは以下のパイプラインに沿って動作します:
+| 値 | チップ | インタフェース | 解像度 | FPS |
+|----|--------|---------------|--------|-----|
+| 0 | HX8399 | MIPI DSI 4-lane LCD | 1080x1920 | 30 |
+| 1 | LT9611 | HDMI（MIPI-to-HDMI ブリッジ） | 1920x1080 | 60 |
+| 2 | LT9611 | HDMI（MIPI-to-HDMI ブリッジ） | 1920x1080 | 30 |
+| 3 | ST7701 | MIPI DSI 2-lane LCD | 480x800 | 30 |
+| 4 | ILI9806 | MIPI DSI 2-lane LCD | 480x800 | 30 |
+| 5 | LT9611 | HDMI（MIPI-to-HDMI ブリッジ） | 1280x720 | 60 |
+| 6 | LT9611 | HDMI（MIPI-to-HDMI ブリッジ） | 1280x720 | 30 |
+| 7 | LT9611 | HDMI（MIPI-to-HDMI ブリッジ） | 640x480 | 60 |
 
-```
-センサー → VICAP (dev) → VICAP (chn) → [GDMA 回転] → VO (layer) → ディスプレイ
-```
+### `-sensor` (OV5647) 詳細
 
-### 初期化シーケンス
+全モード 10-bit Linear、MIPI CSI 2-lane です。
 
-1. **引数のパース** — デバイス/チャネルパラメータの設定
-2. **コネクタ情報の取得** — ディスプレイ解像度の取得
-3. **センサー情報の取得** — カメラ解像度の取得
-4. **VICAP デバイス属性の設定** — 入力、ISP パイプライン、動作モードの設定
-5. **VO コネクタの初期化** — ディスプレイハードウェアのセットアップ
-6. **VB (Video Buffer) の初期化** — バッファプールの確保
-7. **VICAP チャネル属性の設定** — 出力フォーマット、サイズ、クロップの設定
-8. **VICAP と VO のバインド** — キャプチャ出力をディスプレイレイヤーに接続（オプションで GDMA 経由の回転）
-9. **VO レイヤーの設定** — ディスプレイレイヤーのサイズ、位置、回転の設定
-10. **VICAP ストリームの開始** — キャプチャ開始
-11. **VO の有効化** — ディスプレイ出力の開始
+| 値 | 解像度 | FPS | CSI ポート | 備考 |
+|----|--------|-----|-----------|------|
+| 21 | 1920x1080 | 30 | — | レガシー（CSI ポート未指定） |
+| 22 | 2592x1944 | 10 | — | フル解像度、レガシー |
+| 23 | 640x480 | 90 | — | レガシー |
+| 24 | 1920x1080 | 30 | CSI0 | |
+| 27 | 1920x1080 | 30 | CSI1 | |
+| 28 | 1920x1080 | 30 | CSI2 | |
+| 37 | 1920x1080 | 30 | CSI0 | V2 |
+| 38 | 1920x1080 | 30 | CSI1 | V2 |
+| 39 | 1920x1080 | 30 | CSI2 | V2 |
+| 41 | 640x480 | 90 | CSI1 | |
+| 42 | 1280x720 | 60 | CSI1 | |
+| 43 | 1280x960 | 45 | CSI1 | |
+| 44 | 1280x720 | 60 | CSI0 | |
+| 45 | 1280x960 | 45 | CSI0 | |
+| 46 | 640x480 | 90 | CSI2 | |
+| 47 | 1280x720 | 60 | CSI2 | |
+| 48 | 1280x960 | 45 | CSI2 | |
 
 ### インタラクティブコマンド
 
@@ -159,16 +200,12 @@ sample_vicap: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
 ```
 
-!!! warning "/sharefs/ について"
-    正しい転送先は `/sharefs/sample_vicap` であり、`/root/sharefs/sample_vicap` **ではありません**。
-    `/sharefs/` は vfat パーティション (`/dev/mmcblk1p4`) で、bigcore から直接アクセスできます。
-
 ### K230 bigcore (msh) で実行
 
 K230 のシリアルコンソール (ACM1) で実行します:
 
 ```
-msh /> /sharefs/sample_vicap -mode 0 -dev 0 -sensor 0 -chn 0 -ow 640 -oh 480 -preview 1 -rotation 1
+msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
 ```
 
 !!! tip "シリアル接続"
