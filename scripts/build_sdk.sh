@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 SDK_DIR="k230_sdk"
-SDK_REPO="https://github.com/kendryte/k230_sdk"
 DOCKER_IMAGE="k230_sdk"
 NO_FASTBOOT=false
 
@@ -17,12 +16,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Step 1: Clone SDK (skip if already present)
-if [ ! -d "$SDK_DIR" ]; then
-    echo "==> Cloning K230 SDK..."
-    git clone "$SDK_REPO"
+# Step 1: Initialize SDK submodule (skip if already present)
+if [ ! -d "$SDK_DIR/.git" ]; then
+    echo "==> Initializing K230 SDK submodule..."
+    git submodule update --init "$SDK_DIR"
 else
-    echo "==> SDK directory already exists, skipping clone."
+    echo "==> SDK submodule already initialized."
 fi
 
 cd "$SDK_DIR"
