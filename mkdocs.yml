@@ -54,6 +54,7 @@ nav:
       - development/usb_cdc_ether.md
       - development/hello_world.md
       - development/bigcore_rtsmart_mpp.md
+      - development/memory_layout.md
 
 markdown_extensions:
   - admonition
