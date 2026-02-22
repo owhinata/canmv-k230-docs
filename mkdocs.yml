@@ -53,6 +53,7 @@ nav:
       - development/rtsmart_boot.md
       - development/usb_cdc_ether.md
       - development/hello_world.md
+      - development/sample_vicap.md
       - development/bigcore_rtsmart_mpp.md
       - development/memory_layout.md
 
