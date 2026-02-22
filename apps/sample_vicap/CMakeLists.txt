@@ -5,7 +5,6 @@ project(sample_vicap C)
 add_executable(sample_vicap
     src/sample_vicap.c
     src/vo_test_case.c
-    src/vo_bind_test.c
 )
 
 # SDK sample code has warnings — disable -Werror for this target

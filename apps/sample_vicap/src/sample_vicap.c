@@ -53,8 +53,6 @@
 #include "k_dma_comm.h"
 #include "mpi_dma_api.h"
 
-extern k_vo_display_resolution hx8399[20];
-
 #define VICAP_OUTPUT_BUF_NUM 5//3
 #define VICAP_INPUT_BUF_NUM 3
 #define GDMA_BUF_NUM 3
