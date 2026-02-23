@@ -273,6 +273,7 @@ int sample_vivcap_init(void) {
   dev_attr.pipe_ctrl.bits.ahdr_enable = 0;
 
   dev_attr.cpature_frame = 0;
+  dev_attr.mirror = VICAP_MIRROR_VER;
   memcpy(&dev_attr.sensor_info, &sensor_info, sizeof(k_vicap_sensor_info));
 
   ret = kd_mpi_vicap_set_dev_attr(vicap_dev, dev_attr);
