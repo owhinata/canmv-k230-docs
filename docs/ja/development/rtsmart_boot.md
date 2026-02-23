@@ -71,12 +71,18 @@ RT-Smart カーネルバイナリ
 
 ## msh シェル待ちイメージの作成
 
-### 方法 1: ビルドスクリプトを使う
+### 方法 1: ビルドスクリプトを使う（デフォルト）
 
-`scripts/build_sdk.sh` に `--no-fastboot` オプションを渡すと、`fastboot_app.elf` を起動しない msh シェル待ちイメージが生成されます。
+`scripts/build_sdk.sh` はデフォルトで `fastboot_app.elf` を起動しない msh シェル待ちイメージを生成します。
 
 ```bash
-scripts/build_sdk.sh --no-fastboot
+scripts/build_sdk.sh
+```
+
+`fastboot_app.elf` を起動するイメージを生成する場合は `--with-fastboot` を指定します。
+
+```bash
+scripts/build_sdk.sh --with-fastboot
 ```
 
 ### 方法 2: init.sh を手動で変更する
