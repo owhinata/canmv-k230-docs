@@ -381,7 +381,6 @@ void face_location_convert_roi(std::vector<face_coordinate> boxes,
 
   if (boxes.empty()) {
     ae_roi->roiNum = 0;
-    printf("boxes is empty\n");
     return;
   }
 
