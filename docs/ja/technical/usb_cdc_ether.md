@@ -76,7 +76,7 @@ make build-image # SD カードイメージ再生成
 ```
 
 !!! note "SDK ビルドについて"
-    K230 SDK のビルド手順は [SDK ビルド](sdk_build.md) を参照してください。
+    K230 SDK のビルド手順は [SDK ビルド](../development/sdk_build.md) を参照してください。
 
 ### 3. 実機での configfs セットアップ
 

@@ -1,4 +1,4 @@
-# Hello World ビルド
+# hello_world
 
 K230 の bigコア（RT-Smart）および littleコア（Linux）向けアプリケーションを、CMake out-of-tree ビルドでクロスコンパイルして ELF を生成する手順です。同じソースコードから、ツールチェーンファイルの切り替えだけで両コアの ELF を生成できます。
 

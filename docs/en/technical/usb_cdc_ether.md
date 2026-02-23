@@ -76,7 +76,7 @@ make build-image # Regenerate SD card image
 ```
 
 !!! note "Building the SDK"
-    For K230 SDK build instructions, see [SDK Build](sdk_build.md).
+    For K230 SDK build instructions, see [SDK Build](../development/sdk_build.md).
 
 ### 3. configfs Setup on the Device
 

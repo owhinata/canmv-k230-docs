@@ -140,8 +140,8 @@ RT-Smart カーネルは **SCons + Kconfig** でビルドされます。
 | カーネル設定ファイル | `kernel/bsp/maix3/rtconfig.h` |
 
 !!! note "ビルド手順"
-    SDK 全体のビルド方法については [SDK ビルド](sdk_build.md) を参照してください。
-    RT-Smart カーネルの部分ビルドについては [RT-Smart 起動カスタマイズ](rtsmart_boot.md) を参照してください。
+    SDK 全体のビルド方法については [SDK ビルド](../development/sdk_build.md) を参照してください。
+    RT-Smart カーネルの部分ビルドについては [RT-Smart 起動カスタマイズ](../development/rtsmart_boot.md) を参照してください。
 
 ## MPP (Media Processing Platform)
 
@@ -305,6 +305,6 @@ MPP は RT-Smart の上で動作するライブラリ群です。カーネル空
 - RT-Smart はメモリ保護（MMU）により、ユーザ空間のバグがカーネルを破壊することを防ぎます
 
 !!! note "関連ドキュメント"
-    - [SDK ビルド](sdk_build.md) — K230 SDK 全体のビルド方法
-    - [RT-Smart 起動カスタマイズ](rtsmart_boot.md) — 起動シーケンスと init.sh の変更方法
-    - [Hello World](hello_world.md) — ビッグコア / リトルコア向けアプリケーションのビルド
+    - [SDK ビルド](../development/sdk_build.md) — K230 SDK 全体のビルド方法
+    - [RT-Smart 起動カスタマイズ](../development/rtsmart_boot.md) — 起動シーケンスと init.sh の変更方法
+    - [Hello World](../development/hello_world.md) — ビッグコア / リトルコア向けアプリケーションのビルド

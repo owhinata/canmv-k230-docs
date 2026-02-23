@@ -140,8 +140,8 @@ The RT-Smart kernel is built with **SCons + Kconfig**.
 | Kernel config file | `kernel/bsp/maix3/rtconfig.h` |
 
 !!! note "Build instructions"
-    For overall SDK build instructions, see [SDK Build](sdk_build.md).
-    For RT-Smart kernel partial builds, see [RT-Smart Boot Customization](rtsmart_boot.md).
+    For overall SDK build instructions, see [SDK Build](../development/sdk_build.md).
+    For RT-Smart kernel partial builds, see [RT-Smart Boot Customization](../development/rtsmart_boot.md).
 
 ## MPP (Media Processing Platform)
 
@@ -305,6 +305,6 @@ MPP is a library suite that runs on top of RT-Smart, spanning both kernel space 
 - RT-Smart provides memory protection (MMU), preventing user-space bugs from corrupting the kernel
 
 !!! note "Related documents"
-    - [SDK Build](sdk_build.md) — How to build the K230 SDK
-    - [RT-Smart Boot Customization](rtsmart_boot.md) — Boot sequence and init.sh modification
-    - [Hello World](hello_world.md) — Building applications for bigcore / littlecore
+    - [SDK Build](../development/sdk_build.md) — How to build the K230 SDK
+    - [RT-Smart Boot Customization](../development/rtsmart_boot.md) — Boot sequence and init.sh modification
+    - [Hello World](../development/hello_world.md) — Building applications for bigcore / littlecore
