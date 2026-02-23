@@ -71,12 +71,18 @@ RT-Smart kernel binary
 
 ## Creating an msh Shell-Wait Image
 
-### Method 1: Using the Build Script
+### Method 1: Using the Build Script (Default)
 
-Pass `--no-fastboot` to `scripts/build_sdk.sh` to generate an image that does not launch `fastboot_app.elf` and instead waits at the msh shell prompt.
+`scripts/build_sdk.sh` generates an image that does not launch `fastboot_app.elf` and instead waits at the msh shell prompt by default.
 
 ```bash
-scripts/build_sdk.sh --no-fastboot
+scripts/build_sdk.sh
+```
+
+To generate an image that launches `fastboot_app.elf`, pass `--with-fastboot`.
+
+```bash
+scripts/build_sdk.sh --with-fastboot
 ```
 
 ### Method 2: Manually Editing init.sh
