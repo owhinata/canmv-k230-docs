@@ -84,6 +84,57 @@ rtt-ctrl "help"
 - コマンド応答タイムアウト: 約 1 秒
 - IPCM ドライバがロードされている必要がある (`/dev/ipcm_user` が存在すること)
 
+## RT-Smart イメージのみを更新する
+
+`build_sdk.sh` でフルビルド済みの環境で `RT_USING_RTT_CTRL` の有効/無効を切り替えたい場合、`rtconfig.h` を直接編集して部分ビルドできます。
+
+!!! note
+    フルビルド時は `menuconfig_to_code.sh` が `common_rttlinux.config` → `rtconfig.h` にコピーするため直接編集は上書きされます。
+    部分ビルド (`make rt-smart-kernel` 等) ではこのコピーは発生しないため、`rtconfig.h` の直接編集が有効です。
+
+### 部分ビルド
+
+Docker コンテナ内の `k230_sdk/` ディレクトリで実行してください。
+
+```bash
+# rtconfig.h を編集して RT_USING_RTT_CTRL を追加/削除
+vi src/big/rt-smart/kernel/bsp/maix3/rtconfig.h
+
+# 1. RT-Smart カーネル再ビルド — rtconfig.h の変更を反映
+make rt-smart-kernel
+
+# 2. OpenSBI 再ビルド — RT-Smart バイナリをペイロードとして組み込み
+make big-core-opensbi
+
+# 3. 最終 SD カードイメージ生成
+make build-image
+```
+
+`init.sh` やユーザアプリの変更を伴わないため、`mpp` や `rt-smart-apps` のビルドは不要です。
+
+### SD カードへの書き込み
+
+フルイメージを書き直す代わりに、RT-Smart パーティションのみを更新できます。
+SD カードの GPT パーティション構造は以下の通りです:
+
+| パーティション | オフセット | サイズ | 内容 |
+|--------------|-----------|--------|------|
+| rtt | 10 MB | 20 MB | RT-Smart (big-core) ファームウェア |
+| linux | 30 MB | 50 MB | Linux (little-core) ファームウェア |
+| rootfs | 128 MB | 可変 | ext4 ルートファイルシステム |
+| fat32appfs | rootfs の後 | 残り | FAT32 アプリケーション領域 |
+
+ビルド後、`rtt_system.bin` を SD カードの rtt パーティションに `dd` で書き込みます:
+
+```bash
+# /dev/sdX は SD カードのデバイスを指定（例: /dev/sdb）
+sudo dd if=output/k230_canmv_defconfig/images/big-core/rtt_system.bin \
+    of=/dev/sdX bs=1M seek=10 conv=notrunc status=progress
+```
+
+!!! warning
+    `/dev/sdX` はお使いの環境の SD カードデバイスに読み替えてください。誤ったデバイスを指定するとデータが破壊されます。
+
 ## 関連ファイル
 
 | ファイル | 役割 |

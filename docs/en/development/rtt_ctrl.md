@@ -84,6 +84,57 @@ rtt-ctrl "help"
 - Command response timeout: approx. 1 second
 - IPCM driver must be loaded (`/dev/ipcm_user` must exist)
 
+## Updating Only the RT-Smart Image
+
+If you have already completed a full build with `build_sdk.sh` and want to toggle `RT_USING_RTT_CTRL`, you can edit `rtconfig.h` directly and do a partial build.
+
+!!! note
+    During a full build, `menuconfig_to_code.sh` copies `common_rttlinux.config` → `rtconfig.h`, so direct edits are overwritten.
+    Partial builds (`make rt-smart-kernel`, etc.) do not trigger this copy, so direct edits to `rtconfig.h` are preserved.
+
+### Partial Build
+
+Run these inside the Docker container in the `k230_sdk/` directory.
+
+```bash
+# Edit rtconfig.h to add/remove RT_USING_RTT_CTRL
+vi src/big/rt-smart/kernel/bsp/maix3/rtconfig.h
+
+# 1. RT-Smart kernel rebuild — picks up rtconfig.h changes
+make rt-smart-kernel
+
+# 2. OpenSBI rebuild — embeds RT-Smart binary as payload
+make big-core-opensbi
+
+# 3. Final SD card image generation
+make build-image
+```
+
+Since this change does not affect `init.sh` or user applications, `mpp` and `rt-smart-apps` builds are not needed.
+
+### Writing to SD Card
+
+Instead of re-flashing the full image, you can update only the RT-Smart partition.
+The SD card GPT partition layout is as follows:
+
+| Partition | Offset | Size | Contents |
+|-----------|--------|------|----------|
+| rtt | 10 MB | 20 MB | RT-Smart (big-core) firmware |
+| linux | 30 MB | 50 MB | Linux (little-core) firmware |
+| rootfs | 128 MB | variable | ext4 root filesystem |
+| fat32appfs | after rootfs | remainder | FAT32 application storage |
+
+After building, write `rtt_system.bin` to the rtt partition on the SD card using `dd`:
+
+```bash
+# Replace /dev/sdX with your SD card device (e.g., /dev/sdb)
+sudo dd if=output/k230_canmv_defconfig/images/big-core/rtt_system.bin \
+    of=/dev/sdX bs=1M seek=10 conv=notrunc status=progress
+```
+
+!!! warning
+    Replace `/dev/sdX` with the correct SD card device for your environment. Specifying the wrong device will destroy data.
+
 ## Related Files
 
 | File | Role |
