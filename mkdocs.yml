@@ -57,6 +57,7 @@ nav:
       - development/rtsmart_boot.md
       - development/hello_world.md
       - development/sample_vicap.md
+      - development/sample_face_ae.md
   - 技術情報:
       - technical/usb_cdc_ether.md
       - technical/bigcore_rtsmart_mpp.md
