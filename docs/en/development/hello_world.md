@@ -1,4 +1,4 @@
-# Hello World Build
+# hello_world
 
 This guide walks you through cross-compiling an application for the K230 bigcore (RT-Smart) and littlecore (Linux) using a CMake out-of-tree build. The same source code produces ELFs for both cores — just switch the toolchain file.
 

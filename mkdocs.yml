@@ -51,11 +51,12 @@ nav:
   - 開発:
       - development/sdk_build.md
       - development/rtsmart_boot.md
-      - development/usb_cdc_ether.md
       - development/hello_world.md
       - development/sample_vicap.md
-      - development/bigcore_rtsmart_mpp.md
-      - development/memory_layout.md
+  - 技術情報:
+      - technical/usb_cdc_ether.md
+      - technical/bigcore_rtsmart_mpp.md
+      - technical/memory_layout.md
 
 markdown_extensions:
   - admonition
