@@ -3,6 +3,7 @@ project(sample_face_ae CXX)
 
 add_executable(sample_face_ae
     src/main.cc
+    src/face_ae_roi.cc
     src/model.cc
     src/mobile_retinaface.cc
     src/util.cc

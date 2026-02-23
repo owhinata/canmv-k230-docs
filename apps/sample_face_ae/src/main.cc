@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 
+#include "face_ae_roi.h"
 #include "mobile_retinaface.h"
 #include "mpi_sys_api.h"
 
@@ -358,67 +359,10 @@ static void *exit_app(void *arg) {
   return NULL;
 }
 
-k_u32 calc_sum(k_u32 data[], k_u8 size) {
-  k_u32 sum = 0;
-  for (int i = 0; i < size; i++) {
-    sum += data[i];
-  }
-  return sum;
-}
-
-void face_location_convert_roi(std::vector<face_coordinate> boxes,
-                               k_isp_ae_roi *ae_roi, k_u32 h_offset,
-                               k_u32 v_offset, k_u32 scale_h, k_u32 scale_v,
-                               k_u32 width, k_u32 height) {
-#define CHECK_BOUNDARY(s, o, e) s = (o + s) > e ? (e - o) : (s)
-  static k_u32 area[8] = {0};
-  if (ae_roi == nullptr) {
-    std::cout << "face location is Nullptr" << std::endl;
-    return;
-  }
-
-  auto box_size = std::min<int>(boxes.size(), 8);
-
-  if (boxes.empty()) {
-    ae_roi->roiNum = 0;
-    return;
-  }
-
-  ae_roi->roiNum = box_size;
-  for (auto i = 0; i < box_size; i += 1) {
-    boxes[i].x1 = boxes[i].x1 < 0 ? 0 : boxes[i].x1;
-    boxes[i].y1 = boxes[i].y1 < 0 ? 0 : boxes[i].y1;
-
-    ae_roi->roiWindow[i].window.hOffset =
-        (k_u32)(boxes[i].x1 * width / scale_h + h_offset);
-    ae_roi->roiWindow[i].window.vOffset =
-        (k_u32)(boxes[i].y1 * height / scale_v + v_offset);
-
-    ae_roi->roiWindow[i].window.width =
-        ((k_u32)(boxes[i].x2 - (k_u32)boxes[i].x1) * width / scale_h);
-    ae_roi->roiWindow[i].window.height =
-        ((k_u32)(boxes[i].y2 - (k_u32)boxes[i].y1) * height / scale_v);
-
-    CHECK_BOUNDARY(ae_roi->roiWindow[i].window.width,
-                   ae_roi->roiWindow[i].window.hOffset, sensor_info.width);
-    CHECK_BOUNDARY(ae_roi->roiWindow[i].window.height,
-                   ae_roi->roiWindow[i].window.vOffset, sensor_info.height);
-
-    area[i] =
-        ae_roi->roiWindow[i].window.width * ae_roi->roiWindow[i].window.height;
-  }
-
-  k_u32 sum = calc_sum(area, ae_roi->roiNum);
-  for (auto i = 0; i < ae_roi->roiNum; i++) {
-    ae_roi->roiWindow[i].weight = (float)area[i] / sum;
-  }
-}
-
 int main(int argc, char *argv[]) {
   /*Allow one frame time for the VO to release the VB block*/
   k_u32 display_ms = 1000 / 33;
   int face_count = 1;
-  int roi_enable = 0;
   int ret;
   if (argc != 3) {
     std::cerr << "Usage: " << argv[0] << " <kmodel> <roi_enable>" << std::endl;
@@ -454,63 +398,59 @@ int main(int argc, char *argv[]) {
     goto vicap_init_error;
   }
 
-  roi_enable = atoi(argv[2]);
-  if (roi_enable == 1) {
-    kd_mpi_isp_ae_roi_set_enable((k_isp_dev)vicap_dev, (k_bool)1);
-  } else {
-    kd_mpi_isp_ae_roi_set_enable((k_isp_dev)vicap_dev, (k_bool)0);
-  }
+  {
+    FaceAeRoi face_ae_roi((k_isp_dev)vicap_dev, ISP_CHN1_WIDTH, ISP_CHN1_HEIGHT,
+                          sensor_info.width, sensor_info.height);
+    face_ae_roi.set_enable(atoi(argv[2]) == 1);
 
-  while (app_run) {
-    memset(&dump_info, 0, sizeof(k_video_frame_info));
-    ret = kd_mpi_vicap_dump_frame(vicap_dev, VICAP_CHN_ID_1, VICAP_DUMP_YUV,
-                                  &dump_info, 1000);
-    if (ret) {
-      quit.store(false);
-      printf("sample_vicap...kd_mpi_vicap_dump_frame failed.\n");
-      break;
-    }
+    while (app_run) {
+      memset(&dump_info, 0, sizeof(k_video_frame_info));
+      ret = kd_mpi_vicap_dump_frame(vicap_dev, VICAP_CHN_ID_1, VICAP_DUMP_YUV,
+                                    &dump_info, 1000);
+      if (ret) {
+        quit.store(false);
+        printf("sample_vicap...kd_mpi_vicap_dump_frame failed.\n");
+        break;
+      }
 
-    auto vbvaddr = kd_mpi_sys_mmap(dump_info.v_frame.phys_addr[0], size);
-    boxes.clear();
-    // run kpu
-    model.run(reinterpret_cast<uintptr_t>(vbvaddr),
-              reinterpret_cast<uintptr_t>(dump_info.v_frame.phys_addr[0]));
-    kd_mpi_sys_munmap(vbvaddr, size);
-    // get face boxes
-    box_result = model.get_result();
-    boxes = box_result.boxes;
+      auto vbvaddr = kd_mpi_sys_mmap(dump_info.v_frame.phys_addr[0], size);
+      boxes.clear();
+      // run kpu
+      model.run(reinterpret_cast<uintptr_t>(vbvaddr),
+                reinterpret_cast<uintptr_t>(dump_info.v_frame.phys_addr[0]));
+      kd_mpi_sys_munmap(vbvaddr, size);
+      // get face boxes
+      box_result = model.get_result();
+      boxes = box_result.boxes;
 
-    if (boxes.size() < face_count) {
-      for (size_t i = boxes.size(); i < face_count; i++) {
-        vo_frame.draw_en = 0;
-        vo_frame.frame_num = i + 1;
+      if (boxes.size() < face_count) {
+        for (size_t i = boxes.size(); i < face_count; i++) {
+          vo_frame.draw_en = 0;
+          vo_frame.frame_num = i + 1;
+          kd_mpi_vo_draw_frame(&vo_frame);
+        }
+      }
+
+      for (size_t i = 0, j = 0; i < boxes.size(); i += 1) {
+        vo_frame.draw_en = 1;
+        vo_frame.line_x_start =
+            ((uint32_t)boxes[i].x1) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
+        vo_frame.line_y_start =
+            ((uint32_t)boxes[i].y1) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
+        vo_frame.line_x_end =
+            ((uint32_t)boxes[i].x2) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
+        vo_frame.line_y_end =
+            ((uint32_t)boxes[i].y2) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
+        vo_frame.frame_num = ++j;
         kd_mpi_vo_draw_frame(&vo_frame);
       }
-    }
+      face_count = boxes.size();
 
-    for (size_t i = 0, j = 0; i < boxes.size(); i += 1) {
-      vo_frame.draw_en = 1;
-      vo_frame.line_x_start =
-          ((uint32_t)boxes[i].x1) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
-      vo_frame.line_y_start =
-          ((uint32_t)boxes[i].y1) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
-      vo_frame.line_x_end =
-          ((uint32_t)boxes[i].x2) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
-      vo_frame.line_y_end =
-          ((uint32_t)boxes[i].y2) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
-      vo_frame.frame_num = ++j;
-      kd_mpi_vo_draw_frame(&vo_frame);
-    }
-    face_count = boxes.size();
-
-    k_isp_ae_roi user_roi;
-    face_location_convert_roi(boxes, &user_roi, 0, 0, ISP_CHN1_WIDTH,
-                              ISP_CHN1_HEIGHT, 1920, 1080);
-    kd_mpi_isp_ae_set_roi((k_isp_dev)vicap_dev, user_roi);
-    ret = kd_mpi_vicap_dump_release(vicap_dev, VICAP_CHN_ID_1, &dump_info);
-    if (ret) {
-      printf("sample_vicap...kd_mpi_vicap_dump_release failed.\n");
+      face_ae_roi.update(boxes);
+      ret = kd_mpi_vicap_dump_release(vicap_dev, VICAP_CHN_ID_1, &dump_info);
+      if (ret) {
+        printf("sample_vicap...kd_mpi_vicap_dump_release failed.\n");
+      }
     }
   }
 
