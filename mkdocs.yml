@@ -42,6 +42,10 @@ plugins:
         - locale: en
           name: English
           build: true
+          nav_translations:
+            セットアップ: Setup
+            開発: Development
+            技術情報: Technical References
 
 nav:
   - index.md
