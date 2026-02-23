@@ -386,11 +386,14 @@ sample_vicap: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 ### 使用例
 
 ```bash
-# OV5647 (CSI0)、1920x1080 出力、HDMI 1080p60 コネクタ
-./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+# OV5647 1080p30 (CSI0) → HDMI 1080p60、垂直ミラー
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
 
-# OV5647 (CSI0)、1280x720 出力、HDMI 720p60 コネクタ
-./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -ow 1280 -oh 720 -preview 1
+# OV5647 720p60 (CSI0) → HDMI 1080p60、垂直ミラー
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 44 -chn 0 -mirror 2
+
+# OV5647 720p60 (CSI0) → HDMI 720p60、垂直ミラー
+./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -mirror 2
 ```
 
 ### `-conn` 詳細
@@ -457,7 +460,7 @@ scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
 K230 のシリアルコンソール (ACM1) で実行します:
 
 ```
-msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
 ```
 
 !!! tip "シリアル接続"

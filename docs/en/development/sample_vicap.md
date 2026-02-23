@@ -383,14 +383,17 @@ The `apps/sample_vicap/CMakeLists.txt` handles:
 | `-crop <0\|1>` | Enable crop | 0 |
 | `-fps <n>` | Frame rate limit (0=unlimited) | 0 |
 
-### Example
+### Examples
 
 ```bash
-# OV5647 (CSI0), 1920x1080 output, HDMI 1080p60 connector
-./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+# OV5647 1080p30 (CSI0) → HDMI 1080p60, vertical mirror
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
 
-# OV5647 (CSI0), 1280x720 output, HDMI 720p60 connector
-./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -ow 1280 -oh 720 -preview 1
+# OV5647 720p60 (CSI0) → HDMI 1080p60, vertical mirror
+./sample_vicap -mode 0 -conn 1 -dev 0 -sensor 44 -chn 0 -mirror 2
+
+# OV5647 720p60 (CSI0) → HDMI 720p60, vertical mirror
+./sample_vicap -mode 0 -conn 5 -dev 0 -sensor 44 -chn 0 -mirror 2
 ```
 
 ### `-conn` Details
@@ -457,7 +460,7 @@ scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
 On the K230 serial console (ACM1), run:
 
 ```
-msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -ow 1920 -oh 1080 -preview 1
+msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
 ```
 
 !!! tip "Serial connection"
