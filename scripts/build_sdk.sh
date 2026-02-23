@@ -43,11 +43,13 @@ if [ "$FASTBOOT" = false ]; then
 fi
 
 # Enable rtt-ctrl (Linux → RT-Smart msh command execution)
+# Patch the defconfig source so the setting survives menuconfig_to_code.sh
+# which copies common_rttlinux.config → rtconfig.h during build.
 if [ "$RTT_CTRL" = true ]; then
-    RTCONFIG="src/big/rt-smart/kernel/bsp/maix3/rtconfig.h"
-    if ! grep -q 'RT_USING_RTT_CTRL' "$RTCONFIG"; then
-        echo "==> Enabling RT_USING_RTT_CTRL..."
-        sed -i '/RT_USING_IPCM/a #define RT_USING_RTT_CTRL' "$RTCONFIG"
+    RTT_CONFIG="src/big/rt-smart/kernel/bsp/maix3/configs/common_rttlinux.config"
+    if ! grep -q 'RT_USING_RTT_CTRL' "$RTT_CONFIG"; then
+        echo "==> Enabling RT_USING_RTT_CTRL in $RTT_CONFIG..."
+        sed -i '/RT_USING_IPCM/a #define RT_USING_RTT_CTRL' "$RTT_CONFIG"
     fi
 fi
 

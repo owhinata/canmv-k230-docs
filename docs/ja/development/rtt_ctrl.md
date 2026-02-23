@@ -40,7 +40,8 @@ scripts/build_sdk.sh
 scripts/build_sdk.sh --no-rtt-ctrl
 ```
 
-内部的には `rtconfig.h` に `#define RT_USING_RTT_CTRL` を追加することで有効化されます。
+内部的には defconfig ソース (`configs/common_rttlinux.config`) に `#define RT_USING_RTT_CTRL` を追加します。
+ビルド時に `menuconfig_to_code.sh` がこのファイルを `rtconfig.h` にコピーするため、`rtconfig.h` を直接編集しても上書きされます。
 未定義の場合、weak symbol のスタブが使われ `"no rtt ctrl device library!"` と表示されます。
 
 ### ソースコード
@@ -88,4 +89,5 @@ rtt-ctrl "help"
 | ファイル | 役割 |
 |---------|------|
 | `scripts/build_sdk.sh` | `RT_USING_RTT_CTRL` の有効化処理 |
-| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart カーネル設定 |
+| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/configs/common_rttlinux.config` | defconfig ソース（ビルド時に `rtconfig.h` へコピーされる） |
+| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart カーネル設定（自動生成） |

@@ -40,7 +40,8 @@ scripts/build_sdk.sh
 scripts/build_sdk.sh --no-rtt-ctrl
 ```
 
-Internally, this works by adding `#define RT_USING_RTT_CTRL` to `rtconfig.h`.
+Internally, this adds `#define RT_USING_RTT_CTRL` to the defconfig source (`configs/common_rttlinux.config`).
+During build, `menuconfig_to_code.sh` copies this file to `rtconfig.h`, so editing `rtconfig.h` directly will be overwritten.
 When undefined, a weak symbol stub is used and `"no rtt ctrl device library!"` is displayed.
 
 ### Source Code
@@ -88,4 +89,5 @@ rtt-ctrl "help"
 | File | Role |
 |------|------|
 | `scripts/build_sdk.sh` | `RT_USING_RTT_CTRL` enablement logic |
-| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart kernel configuration |
+| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/configs/common_rttlinux.config` | Defconfig source (copied to `rtconfig.h` during build) |
+| `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart kernel configuration (auto-generated) |
