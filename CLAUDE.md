@@ -6,6 +6,7 @@
 
 - **ブランチ**: `feat/`, `docs/`, `style/`, `fix/`, `build/`, `refactor/`, `chore/` prefix。ベースは常に `main`
 - **コミット**: conventional commits 形式 `type: short description`
+- **`k230_sdk/`**: サブモジュール。変更はコミットしない（`build_sdk.sh` が実行時にパッチする）
 
 ### PR作成
 
