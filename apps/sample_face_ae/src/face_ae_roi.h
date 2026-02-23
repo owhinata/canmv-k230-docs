@@ -11,8 +11,8 @@ class FaceAeRoi {
   FaceAeRoi(k_isp_dev dev, k_u32 model_w, k_u32 model_h, k_u32 sensor_w,
             k_u32 sensor_h);
 
-  void set_enable(bool enable);
-  void update(const std::vector<face_coordinate>& boxes);
+  void SetEnable(bool enable);
+  void Update(const std::vector<face_coordinate>& boxes);
 
  private:
   k_isp_dev dev_;

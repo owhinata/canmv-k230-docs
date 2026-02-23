@@ -7,35 +7,33 @@
 
 #include "util.h"
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::runtime::detail;
-using namespace nncase::F::k230;
+namespace nr = nncase::runtime;
+namespace nfk = nncase::F::k230;
 
 class Model {
  public:
   Model(const char *model_name, const char *kmodel_file);
   ~Model();
-  void run(uintptr_t vaddr, uintptr_t paddr);
-  std::string model_name() const;
+  void Run(uintptr_t vaddr, uintptr_t paddr);
+  std::string ModelName() const;
 
  protected:
-  virtual void preprocess(uintptr_t vaddr, uintptr_t paddr) = 0;
-  void kpu_run();
-  virtual void postprocess() = 0;
-  runtime_tensor input_tensor(size_t idx);
-  void input_tensor(size_t idx, runtime_tensor &tensor);
-  runtime_tensor output_tensor(size_t idx);
-  dims_t input_shape(size_t idx);
-  dims_t output_shape(size_t idx);
+  virtual void Preprocess(uintptr_t vaddr, uintptr_t paddr) = 0;
+  void KpuRun();
+  virtual void Postprocess() = 0;
+  nr::runtime_tensor InputTensor(size_t idx);
+  void InputTensor(size_t idx, nr::runtime_tensor &tensor);
+  nr::runtime_tensor OutputTensor(size_t idx);
+  nncase::dims_t InputShape(size_t idx);
+  nncase::dims_t OutputShape(size_t idx);
 
  protected:
-  std::unique_ptr<ai2d_builder> ai2d_builder_;
-  runtime_tensor ai2d_in_tensor_;
-  runtime_tensor ai2d_out_tensor_;
+  std::unique_ptr<nfk::ai2d_builder> ai2d_builder_;
+  nr::runtime_tensor ai2d_in_tensor_;
+  nr::runtime_tensor ai2d_out_tensor_;
 
  private:
-  interpreter interp_;
+  nr::interpreter interp_;
   std::string model_name_;
   std::vector<uint8_t> kmodel_;
 };

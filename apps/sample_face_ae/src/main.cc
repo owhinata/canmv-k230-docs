@@ -18,14 +18,14 @@ using namespace nncase::runtime::detail;
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <atomic>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "k_connector_comm.h"
 #include "k_module.h"
@@ -69,7 +69,7 @@ void fun_sig(int sig) {
   }
 }
 
-k_vo_draw_frame vo_frame = (k_vo_draw_frame){1, 16, 16, 128, 128, 1};
+k_vo_draw_frame vo_frame = {1, 16, 16, 128, 128, 1};
 
 int vo_creat_layer_test(k_vo_layer chn_id, layer_info *info) {
   k_vo_video_layer_attr attr;
@@ -171,7 +171,7 @@ static void sample_vo_fn(void *arg) {
 
 static void *sample_vo_thread(void *arg) {
   sample_vo_fn(arg);
-  return NULL;
+  return nullptr;
 }
 
 k_vicap_dev vicap_dev;
@@ -356,7 +356,7 @@ static void *exit_app(void *arg) {
     usleep(10000);
   }
   app_run = false;
-  return NULL;
+  return nullptr;
 }
 
 int main(int argc, char *argv[]) {
@@ -373,11 +373,11 @@ int main(int argc, char *argv[]) {
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = fun_sig;
   sigfillset(&sa.sa_mask);
-  sigaction(SIGINT, &sa, NULL);
+  sigaction(SIGINT, &sa, nullptr);
 
   pthread_t vo_thread_handle;
   pthread_t exit_thread_handle;
-  pthread_create(&exit_thread_handle, NULL, exit_app, NULL);
+  pthread_create(&exit_thread_handle, nullptr, exit_app, nullptr);
 
   size_t size = CHANNEL * ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH;
   ;
@@ -391,17 +391,18 @@ int main(int argc, char *argv[]) {
     goto vb_init_error;
   }
 
-  pthread_create(&vo_thread_handle, NULL, sample_vo_thread, NULL);
+  pthread_create(&vo_thread_handle, nullptr, sample_vo_thread, nullptr);
   ret = sample_vivcap_init();
-  pthread_join(vo_thread_handle, NULL);
+  pthread_join(vo_thread_handle, nullptr);
   if (ret) {
     goto vicap_init_error;
   }
 
   {
-    FaceAeRoi face_ae_roi((k_isp_dev)vicap_dev, ISP_CHN1_WIDTH, ISP_CHN1_HEIGHT,
-                          sensor_info.width, sensor_info.height);
-    face_ae_roi.set_enable(atoi(argv[2]) == 1);
+    FaceAeRoi face_ae_roi(static_cast<k_isp_dev>(vicap_dev), ISP_CHN1_WIDTH,
+                          ISP_CHN1_HEIGHT, sensor_info.width,
+                          sensor_info.height);
+    face_ae_roi.SetEnable(atoi(argv[2]) == 1);
 
     while (app_run) {
       memset(&dump_info, 0, sizeof(k_video_frame_info));
@@ -416,11 +417,11 @@ int main(int argc, char *argv[]) {
       auto vbvaddr = kd_mpi_sys_mmap(dump_info.v_frame.phys_addr[0], size);
       boxes.clear();
       // run kpu
-      model.run(reinterpret_cast<uintptr_t>(vbvaddr),
+      model.Run(reinterpret_cast<uintptr_t>(vbvaddr),
                 reinterpret_cast<uintptr_t>(dump_info.v_frame.phys_addr[0]));
       kd_mpi_sys_munmap(vbvaddr, size);
       // get face boxes
-      box_result = model.get_result();
+      box_result = model.GetResult();
       boxes = box_result.boxes;
 
       if (boxes.size() < face_count) {
@@ -433,20 +434,20 @@ int main(int argc, char *argv[]) {
 
       for (size_t i = 0, j = 0; i < boxes.size(); i += 1) {
         vo_frame.draw_en = 1;
-        vo_frame.line_x_start =
-            ((uint32_t)boxes[i].x1) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
-        vo_frame.line_y_start =
-            ((uint32_t)boxes[i].y1) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
-        vo_frame.line_x_end =
-            ((uint32_t)boxes[i].x2) * ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
-        vo_frame.line_y_end =
-            ((uint32_t)boxes[i].y2) * ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
+        vo_frame.line_x_start = static_cast<uint32_t>(boxes[i].x1) *
+                                ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
+        vo_frame.line_y_start = static_cast<uint32_t>(boxes[i].y1) *
+                                ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
+        vo_frame.line_x_end = static_cast<uint32_t>(boxes[i].x2) *
+                              ISP_CHN0_WIDTH / ISP_CHN1_WIDTH;
+        vo_frame.line_y_end = static_cast<uint32_t>(boxes[i].y2) *
+                              ISP_CHN0_HEIGHT / ISP_CHN1_HEIGHT;
         vo_frame.frame_num = ++j;
         kd_mpi_vo_draw_frame(&vo_frame);
       }
       face_count = boxes.size();
 
-      face_ae_roi.update(boxes);
+      face_ae_roi.Update(boxes);
       ret = kd_mpi_vicap_dump_release(vicap_dev, VICAP_CHN_ID_1, &dump_info);
       if (ret) {
         printf("sample_vicap...kd_mpi_vicap_dump_release failed.\n");
@@ -455,7 +456,7 @@ int main(int argc, char *argv[]) {
   }
 
 app_exit:
-  pthread_join(exit_thread_handle, NULL);
+  pthread_join(exit_thread_handle, nullptr);
   for (size_t i = 0; i < boxes.size(); i++) {
     vo_frame.draw_en = 0;
     vo_frame.frame_num = i + 1;
