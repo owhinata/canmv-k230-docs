@@ -40,6 +40,13 @@ if [ "$NO_FASTBOOT" = true ]; then
     echo "# msh shell ready" > src/big/rt-smart/init.sh
 fi
 
+# Enable rtt-ctrl (Linux → RT-Smart msh command execution)
+RTCONFIG="src/big/rt-smart/kernel/bsp/maix3/rtconfig.h"
+if ! grep -q 'RT_USING_RTT_CTRL' "$RTCONFIG"; then
+    echo "==> Enabling RT_USING_RTT_CTRL..."
+    sed -i '/RT_USING_IPCM/a #define RT_USING_RTT_CTRL' "$RTCONFIG"
+fi
+
 # Step 4: Build SDK inside Docker
 echo "==> Building SDK (this may take a while)..."
 docker run -it --rm \
