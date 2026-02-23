@@ -1,4 +1,4 @@
-# CoreMark Benchmark
+# coremark
 
 [CoreMark](https://github.com/eembc/coremark) is a CPU benchmark provided by EEMBC. `apps/coremark/` uses CMake FetchContent to automatically fetch the upstream source and builds for both Big/Little cores with **no custom source files** — only a CMakeLists.txt.
 
@@ -163,8 +163,21 @@ Run from the repository root directory.
     msh /> /sharefs/coremark
     2K performance run parameters for coremark.
     CoreMark Size    : 666
-    ...
-    CoreMark 1.0 : xxx.xx / GCC12.0.1 ... / STACK
+    Total ticks      : 13603
+    Total time (secs): 13.603000
+    Iterations/Sec   : 4410.791737
+    Iterations       : 60000
+    Compiler version : GCC12.0.1 20220505 (prerelease)
+    Compiler flags   : -O2
+    Memory location  : Please put data memory location here
+    		(e.g. code in flash, data on heap etc)
+    seedcrc          : 0xe9f5
+    [0]crclist       : 0xe714
+    [0]crcmatrix     : 0x1fd7
+    [0]crcstate      : 0x8e3a
+    [0]crcfinal      : 0xbd59
+    Correct operation validated. See README.md for run and reporting rules.
+    CoreMark 1.0 : 4410.791737 / GCC12.0.1 20220505 (prerelease) -O2 / Heap
     ```
 
     !!! tip "Serial connection"
@@ -189,8 +202,21 @@ Run from the repository root directory.
     [root@canmv ~]# /root/coremark
     2K performance run parameters for coremark.
     CoreMark Size    : 666
-    ...
-    CoreMark 1.0 : xxx.xx / GCC10.2.0 ... / STACK
+    Total ticks      : 12005
+    Total time (secs): 12.005000
+    Iterations/Sec   : 2498.958767
+    Iterations       : 30000
+    Compiler version : GCC10.2.0
+    Compiler flags   : -O2
+    Memory location  : Please put data memory location here
+    		(e.g. code in flash, data on heap etc)
+    seedcrc          : 0xe9f5
+    [0]crclist       : 0xe714
+    [0]crcmatrix     : 0x1fd7
+    [0]crcstate      : 0x8e3a
+    [0]crcfinal      : 0x5275
+    Correct operation validated. See README.md for run and reporting rules.
+    CoreMark 1.0 : 2498.958767 / GCC10.2.0 -O2 / Heap
     ```
 
     !!! tip "Serial connection"
