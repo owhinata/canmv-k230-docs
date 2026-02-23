@@ -1,4 +1,4 @@
-# sample_vicap Build
+# sample_vicap
 
 This guide explains how to build the K230 `sample_vicap` application using CMake out-of-tree build. This sample captures video frames from a camera sensor (VICAP) and displays them on a screen (VO), demonstrating the K230 MPP media pipeline.
 
@@ -27,36 +27,288 @@ This guide explains how to build the K230 `sample_vicap` application using CMake
 | File | Description |
 |------|-------------|
 | `sample_vicap.c` | Main application — argument parsing, VICAP/VO setup, frame dump loop |
-| `vo_test_case.c` | VO display helper functions — DSI init, layer/OSD creation, connector setup |
-| `vo_test_case.h` | Header for VO helper functions and type definitions |
-| `vo_bind_test.c` | VVI-to-VO binding tests (used for `vo_layer_bind_config`, `vdss_bind_vo_config`) |
+| `vo_test_case.c` | VO display helpers — layer/OSD creation (`vo_creat_layer_test`, `vo_creat_osd_test`) |
+| `vo_test_case.h` | Header for VO helper types (`osd_info`, `layer_info`) and function declarations |
 
 These files are copied from the SDK:
 
 - `sample_vicap.c` from `k230_sdk/src/big/mpp/userapps/sample/sample_vicap/`
-- `vo_test_case.c`, `vo_test_case.h`, `vo_bind_test.c` from `k230_sdk/src/big/mpp/userapps/sample/sample_vo/`
+- `vo_test_case.c`, `vo_test_case.h` from `k230_sdk/src/big/mpp/userapps/sample/sample_vo/`
 
 ## Processing Flow
 
 The application follows this pipeline:
 
 ```
-Sensor → VICAP (dev) → VICAP (chn) → [GDMA rotation] → VO (layer) → Display
+Sensor → VI → ISP → Dewarp → [GDMA rotation] → VO → Display
 ```
+
+See the [K230 VICAP API Reference](https://www.kendryte.com/k230/en/dev/01_software/board/mpp/K230_VICAP_API_Reference.html) for details on the VICAP hardware modules (Sensor, VI, ISP, Dewarp).
 
 ### Initialization Sequence
 
-1. **Parse arguments** — configure device/channel parameters
-2. **Query connector info** — get display resolution
-3. **Query sensor info** — get camera resolution
-4. **Set VICAP device attributes** — configure input, ISP pipeline, work mode
-5. **Initialize VO connector** — set up display hardware
-6. **Initialize VB (Video Buffer)** — allocate buffer pools
-7. **Set VICAP channel attributes** — configure output format, size, crop
-8. **Bind VICAP to VO** — connect capture output to display layers (optionally via GDMA for rotation)
-9. **Configure VO layers** — set display layer sizes, positions, rotation
-10. **Start VICAP stream** — begin capture
-11. **Enable VO** — start display output
+#### 1. Parse arguments
+
+Parses command-line options to configure work mode, connector type, device/channel parameters, and output settings.
+
+**Source:** [`main()` L519–L947][vicap-main-519]
+
+No MPP API calls — uses standard C argument parsing (`strcmp`, `atoi`).
+
+#### 2. Query connector info
+
+Retrieves display connector information to determine the output resolution.
+
+**Source:** [`main()` L955–L962][vicap-main-955]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_get_connector_info()` | Get connector resolution and configuration |
+
+#### 3. Query sensor info
+
+Retrieves sensor capabilities (resolution, format) for the configured sensor type.
+
+**Source:** [`main()` L964–L985][vicap-main-964]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_get_sensor_info()` | Get sensor resolution and information |
+
+#### 4. Set VICAP device attributes
+
+Configures input window, ISP pipeline controls (AE, AWB, HDR, DNR3), work mode, and optional dewarp. In load-image mode, loads a raw image file into the device.
+
+**Source:** [`main()` L990–L1072][vicap-main-990]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_set_dev_attr()` | Set device acquisition window, work mode, ISP pipeline |
+| `kd_mpi_vicap_load_image()` | Load raw image data (load-image mode only) |
+
+#### 5. Initialize VO connector
+
+Opens and initializes the display connector hardware.
+
+**Source:** [`main()` L1113–L1117][vicap-main-1113] → [`sample_vicap_vo_init()`][vicap-122]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_get_connector_info()` | Get connector details |
+| `kd_mpi_connector_open()` | Open connector device |
+| `kd_mpi_connector_power_set()` | Enable connector power |
+| `kd_mpi_connector_init()` | Initialize connector hardware |
+
+#### 6. Initialize VB (Video Buffer)
+
+Calculates buffer sizes per channel based on pixel format and resolution, then initializes the video buffer pools. Registers `vb_exit()` with `atexit()`.
+
+**Source:** [`main()` L1119–L1124][vicap-main-1119]
+
+- [`sample_vicap_vb_init()`][vicap-256] — calculates buffer pool sizes and initializes VB
+- [`vb_exit()`][vicap-473] — registered with `atexit` for cleanup
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vb_set_config()` | Configure buffer pool count and sizes |
+| `kd_mpi_vb_set_supplement_config()` | Set JPEG supplement buffer config |
+| `kd_mpi_vb_init()` | Initialize video buffer pools |
+
+#### 7. Set VICAP channel attributes
+
+Configures each enabled channel's output window, crop region, pixel format, buffer count, and frame rate.
+
+**Source:** [`main()` L1127–L1175][vicap-main-1127]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_set_dump_reserved()` | Reserve dump buffer for the channel |
+| `kd_mpi_vicap_set_chn_attr()` | Set channel output format, size, crop, buffer |
+
+#### 8. Bind VICAP to VO
+
+Connects VICAP output channels to VO display layers. For rotation values 17–19, a GDMA channel is inserted between VI and VO. Otherwise, VI is bound directly to VO.
+
+**Source:** [`main()` L1177–L1283][vicap-main-1177]
+
+- [`sample_vicap_bind_vo()`][vicap-349] — direct VI-to-VO binding (no GDMA)
+- [`dma_dev_attr_init()`][vicap-393] — initializes GDMA device (rotation path)
+
+**Direct binding (no GDMA):**
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_sys_bind()` | Bind VI channel to VO channel |
+
+**GDMA rotation path (rotation 17–19):**
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_dma_set_dev_attr()` | Configure GDMA device |
+| `kd_mpi_dma_start_dev()` | Start GDMA device |
+| `kd_mpi_dma_request_chn()` | Request a GDMA channel |
+| `kd_mpi_sys_bind()` | Bind VI → GDMA |
+| `kd_mpi_sys_bind()` | Bind GDMA → VO |
+| `kd_mpi_dma_set_chn_attr()` | Set GDMA channel rotation and format |
+| `kd_mpi_dma_start_chn()` | Start GDMA channel |
+
+#### 9. Configure VO layers
+
+Sets up display layers and OSD. Calculates positioning with margins to center layers on screen.
+
+**Source:** [`main()` L1289–L1293][vicap-main-1289]
+
+- [`sample_vicap_vo_layer_init()`][vicap-153] — orchestrates layer/OSD creation
+- [`vo_creat_layer_test()`][vo-83] — creates a video layer
+- [`vo_creat_osd_test()`][vo-34] — creates an OSD layer
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vo_set_video_layer_attr()` | Set layer size, position, rotation |
+| `kd_mpi_vo_enable_video_layer()` | Enable video layer |
+| `kd_mpi_vo_set_video_osd_attr()` | Set OSD attributes |
+| `kd_mpi_vo_osd_enable()` | Enable OSD layer |
+
+#### 10. Initialize and start VICAP
+
+Initializes each enabled VICAP device and begins frame capture.
+
+**Source:** [`main()` L1295–L1317][vicap-main-1295]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_init()` | Initialize VICAP device |
+| `kd_mpi_vicap_start_stream()` | Start capture stream |
+
+#### 11. Enable VO
+
+Enables the display output.
+
+**Source:** [`main()` L1319][vicap-main-1319] → [`sample_vicap_vo_enable()`][vicap-241]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vo_enable()` | Enable VO display output |
+
+#### 12. Configure slave mode (optional)
+
+When slave mode is enabled, configures the VICAP slave timing parameters for external sync signal generation.
+
+**Source:** [`main()` L1321–L1336][vicap-main-1321]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_set_slave_attr()` | Set slave timing (vsync cycle, high period) |
+| `kd_mpi_vicap_set_slave_enable()` | Enable slave vsync/hsync output |
+
+### Cleanup Sequence
+
+When the application exits (user presses `q`), resources are released in reverse order:
+
+#### 1. Disable slave mode
+
+**Source:** [`main()` L1579–L1587][vicap-main-1579]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_set_slave_enable()` | Disable vsync/hsync output |
+
+#### 2. Stop VICAP stream
+
+**Source:** [`main()` L1589–L1598][vicap-main-1589]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_stop_stream()` | Stop capture stream |
+
+#### 3. Deinitialize VICAP
+
+**Source:** [`main()` L1600–L1604][vicap-main-1600]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vicap_deinit()` | Deinitialize VICAP device |
+
+#### 4. Disable VO layers
+
+Disables video display layers and OSD overlays.
+
+**Source:** [`main()` L1613–L1650][vicap-main-1613]
+
+- [`sample_vicap_disable_vo_layer()`][vicap-246]
+- [`sample_vicap_disable_vo_osd()`][vicap-251]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vo_disable_video_layer()` | Disable the video layer |
+| `kd_mpi_vo_osd_disable()` | Disable the OSD layer |
+
+#### 5. Release GDMA (if used)
+
+**Source:** [`main()` L1651–L1679][vicap-main-1651]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_dma_stop_chn()` | Stop GDMA channel |
+| `kd_mpi_sys_unbind()` | Unbind VI → GDMA and GDMA → VO |
+| `kd_mpi_dma_release_chn()` | Release GDMA channel |
+
+#### 6. Unbind VI–VO (if no GDMA)
+
+**Source:** [`main()` L1680–L1682][vicap-main-1680] → [`sample_vicap_unbind_vo()`][vicap-371]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_sys_unbind()` | Unbind VI from VO |
+
+#### 7. Stop GDMA device
+
+**Source:** [`main()` L1687–L1692][vicap-main-1687]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_dma_stop_dev()` | Stop GDMA device |
+
+#### 8. Release VB
+
+**Source:** registered via [`atexit()` L1124][vicap-main-1124] → [`vb_exit()`][vicap-473]
+
+| API Call | Purpose |
+|----------|---------|
+| `kd_mpi_vb_exit()` | Deinitialize VB subsystem |
+
+[vicap-main-519]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L519-L947
+[vicap-main-955]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L955-L962
+[vicap-main-964]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L964-L985
+[vicap-main-990]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L990-L1072
+[vicap-main-1113]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1113-L1117
+[vicap-main-1119]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1119-L1124
+[vicap-main-1127]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1127-L1175
+[vicap-main-1177]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1177-L1283
+[vicap-main-1289]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1289-L1293
+[vicap-main-1295]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1295-L1317
+[vicap-main-1319]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1319
+[vicap-main-1321]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1321-L1336
+[vicap-main-1579]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1579-L1587
+[vicap-main-1589]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1589-L1598
+[vicap-main-1600]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1600-L1604
+[vicap-main-1613]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1613-L1650
+[vicap-main-1651]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1651-L1679
+[vicap-main-1680]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1680-L1682
+[vicap-main-1687]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1687-L1692
+[vicap-main-1124]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1124
+[vicap-122]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L122-L151
+[vicap-153]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L153-L239
+[vicap-241]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L241-L244
+[vicap-246]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L246-L249
+[vicap-251]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L251-L254
+[vicap-256]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L256-L347
+[vicap-349]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L349-L369
+[vicap-371]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L371-L391
+[vicap-393]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L393-L416
+[vicap-473]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L473-L475
+[vo-34]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L34-L80
+[vo-83]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L83-L124
 
 ## Build Steps
 
