@@ -57,6 +57,7 @@ nav:
       - development/rtsmart_boot.md
       - development/rtt_ctrl.md
       - development/hello_world.md
+      - development/coremark.md
       - development/sample_vicap.md
       - development/sample_face_ae.md
   - 技術情報:
