@@ -51,7 +51,7 @@ See the [K230 VICAP API Reference](https://www.kendryte.com/k230/en/dev/01_softw
 
 Parses command-line options to configure work mode, connector type, device/channel parameters, and output settings.
 
-**Source:** [`main()` L519–L947][vicap-main-519]
+**Source:** [`main()` L557–L913][vicap-main-557]
 
 No MPP API calls — uses standard C argument parsing (`strcmp`, `atoi`).
 
@@ -59,7 +59,7 @@ No MPP API calls — uses standard C argument parsing (`strcmp`, `atoi`).
 
 Retrieves display connector information to determine the output resolution.
 
-**Source:** [`main()` L955–L962][vicap-main-955]
+**Source:** [`main()` L921–L928][vicap-main-921]
 
 | API Call | Purpose |
 |----------|---------|
@@ -69,7 +69,7 @@ Retrieves display connector information to determine the output resolution.
 
 Retrieves sensor capabilities (resolution, format) for the configured sensor type.
 
-**Source:** [`main()` L964–L985][vicap-main-964]
+**Source:** [`main()` L930–L952][vicap-main-930]
 
 | API Call | Purpose |
 |----------|---------|
@@ -79,7 +79,7 @@ Retrieves sensor capabilities (resolution, format) for the configured sensor typ
 
 Configures input window, ISP pipeline controls (AE, AWB, HDR, DNR3), work mode, and optional dewarp. In load-image mode, loads a raw image file into the device.
 
-**Source:** [`main()` L990–L1072][vicap-main-990]
+**Source:** [`main()` L957–L1049][vicap-main-957]
 
 | API Call | Purpose |
 |----------|---------|
@@ -90,7 +90,7 @@ Configures input window, ISP pipeline controls (AE, AWB, HDR, DNR3), work mode, 
 
 Opens and initializes the display connector hardware.
 
-**Source:** [`main()` L1113–L1117][vicap-main-1113] → [`sample_vicap_vo_init()`][vicap-122]
+**Source:** [`main()` L1098–L1102][vicap-main-1098] → [`sample_vicap_vo_init()`][vicap-120]
 
 | API Call | Purpose |
 |----------|---------|
@@ -103,10 +103,10 @@ Opens and initializes the display connector hardware.
 
 Calculates buffer sizes per channel based on pixel format and resolution, then initializes the video buffer pools. Registers `vb_exit()` with `atexit()`.
 
-**Source:** [`main()` L1119–L1124][vicap-main-1119]
+**Source:** [`main()` L1104–L1109][vicap-main-1104]
 
-- [`sample_vicap_vb_init()`][vicap-256] — calculates buffer pool sizes and initializes VB
-- [`vb_exit()`][vicap-473] — registered with `atexit` for cleanup
+- [`sample_vicap_vb_init()`][vicap-258] — calculates buffer pool sizes and initializes VB
+- [`vb_exit()`][vicap-518] — registered with `atexit` for cleanup
 
 | API Call | Purpose |
 |----------|---------|
@@ -118,7 +118,7 @@ Calculates buffer sizes per channel based on pixel format and resolution, then i
 
 Configures each enabled channel's output window, crop region, pixel format, buffer count, and frame rate.
 
-**Source:** [`main()` L1127–L1175][vicap-main-1127]
+**Source:** [`main()` L1112–L1168][vicap-main-1112]
 
 | API Call | Purpose |
 |----------|---------|
@@ -129,10 +129,10 @@ Configures each enabled channel's output window, crop region, pixel format, buff
 
 Connects VICAP output channels to VO display layers. For rotation values 17–19, a GDMA channel is inserted between VI and VO. Otherwise, VI is bound directly to VO.
 
-**Source:** [`main()` L1177–L1283][vicap-main-1177]
+**Source:** [`main()` L1170–L1283][vicap-main-1170]
 
-- [`sample_vicap_bind_vo()`][vicap-349] — direct VI-to-VO binding (no GDMA)
-- [`dma_dev_attr_init()`][vicap-393] — initializes GDMA device (rotation path)
+- [`sample_vicap_bind_vo()`][vicap-358] — direct VI-to-VO binding (no GDMA)
+- [`dma_dev_attr_init()`][vicap-402] — initializes GDMA device (rotation path)
 
 **Direct binding (no GDMA):**
 
@@ -158,8 +158,8 @@ Sets up display layers and OSD. Calculates positioning with margins to center la
 
 **Source:** [`main()` L1289–L1293][vicap-main-1289]
 
-- [`sample_vicap_vo_layer_init()`][vicap-153] — orchestrates layer/OSD creation
-- [`vo_creat_layer_test()`][vo-83] — creates a video layer
+- [`sample_vicap_vo_layer_init()`][vicap-148] — orchestrates layer/OSD creation
+- [`vo_creat_layer_test()`][vo-75] — creates a video layer
 - [`vo_creat_osd_test()`][vo-34] — creates an OSD layer
 
 | API Call | Purpose |
@@ -173,7 +173,7 @@ Sets up display layers and OSD. Calculates positioning with margins to center la
 
 Initializes each enabled VICAP device and begins frame capture.
 
-**Source:** [`main()` L1295–L1317][vicap-main-1295]
+**Source:** [`main()` L1295–L1315][vicap-main-1295]
 
 | API Call | Purpose |
 |----------|---------|
@@ -184,7 +184,7 @@ Initializes each enabled VICAP device and begins frame capture.
 
 Enables the display output.
 
-**Source:** [`main()` L1319][vicap-main-1319] → [`sample_vicap_vo_enable()`][vicap-241]
+**Source:** [`main()` L1317][vicap-main-1317] → [`sample_vicap_vo_enable()`][vicap-248]
 
 | API Call | Purpose |
 |----------|---------|
@@ -194,7 +194,7 @@ Enables the display output.
 
 When slave mode is enabled, configures the VICAP slave timing parameters for external sync signal generation.
 
-**Source:** [`main()` L1321–L1336][vicap-main-1321]
+**Source:** [`main()` L1319–L1333][vicap-main-1319]
 
 | API Call | Purpose |
 |----------|---------|
@@ -207,7 +207,7 @@ When the application exits (user presses `q`), resources are released in reverse
 
 #### 1. Disable slave mode
 
-**Source:** [`main()` L1579–L1587][vicap-main-1579]
+**Source:** [`main()` L1604–L1611][vicap-main-1604]
 
 | API Call | Purpose |
 |----------|---------|
@@ -215,7 +215,7 @@ When the application exits (user presses `q`), resources are released in reverse
 
 #### 2. Stop VICAP stream
 
-**Source:** [`main()` L1589–L1598][vicap-main-1589]
+**Source:** [`main()` L1613–L1621][vicap-main-1613]
 
 | API Call | Purpose |
 |----------|---------|
@@ -223,7 +223,7 @@ When the application exits (user presses `q`), resources are released in reverse
 
 #### 3. Deinitialize VICAP
 
-**Source:** [`main()` L1600–L1604][vicap-main-1600]
+**Source:** [`main()` L1623–L1627][vicap-main-1623]
 
 | API Call | Purpose |
 |----------|---------|
@@ -233,10 +233,10 @@ When the application exits (user presses `q`), resources are released in reverse
 
 Disables video display layers and OSD overlays.
 
-**Source:** [`main()` L1613–L1650][vicap-main-1613]
+**Source:** [`main()` L1636–L1670][vicap-main-1636]
 
-- [`sample_vicap_disable_vo_layer()`][vicap-246]
-- [`sample_vicap_disable_vo_osd()`][vicap-251]
+- [`sample_vicap_disable_vo_layer()`][vicap-250]
+- [`sample_vicap_disable_vo_osd()`][vicap-254]
 
 | API Call | Purpose |
 |----------|---------|
@@ -245,7 +245,7 @@ Disables video display layers and OSD overlays.
 
 #### 5. Release GDMA (if used)
 
-**Source:** [`main()` L1651–L1679][vicap-main-1651]
+**Source:** [`main()` L1671–L1699][vicap-main-1671]
 
 | API Call | Purpose |
 |----------|---------|
@@ -255,7 +255,7 @@ Disables video display layers and OSD overlays.
 
 #### 6. Unbind VI–VO (if no GDMA)
 
-**Source:** [`main()` L1680–L1682][vicap-main-1680] → [`sample_vicap_unbind_vo()`][vicap-371]
+**Source:** [`main()` L1700–L1702][vicap-main-1700] → [`sample_vicap_unbind_vo()`][vicap-380]
 
 | API Call | Purpose |
 |----------|---------|
@@ -263,7 +263,7 @@ Disables video display layers and OSD overlays.
 
 #### 7. Stop GDMA device
 
-**Source:** [`main()` L1687–L1692][vicap-main-1687]
+**Source:** [`main()` L1707–L1712][vicap-main-1707]
 
 | API Call | Purpose |
 |----------|---------|
@@ -271,44 +271,44 @@ Disables video display layers and OSD overlays.
 
 #### 8. Release VB
 
-**Source:** registered via [`atexit()` L1124][vicap-main-1124] → [`vb_exit()`][vicap-473]
+**Source:** registered via [`atexit()` L1109][vicap-main-1109] → [`vb_exit()`][vicap-518]
 
 | API Call | Purpose |
 |----------|---------|
 | `kd_mpi_vb_exit()` | Deinitialize VB subsystem |
 
-[vicap-main-519]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L519-L947
-[vicap-main-955]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L955-L962
-[vicap-main-964]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L964-L985
-[vicap-main-990]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L990-L1072
-[vicap-main-1113]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1113-L1117
-[vicap-main-1119]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1119-L1124
-[vicap-main-1127]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1127-L1175
-[vicap-main-1177]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1177-L1283
-[vicap-main-1289]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1289-L1293
-[vicap-main-1295]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1295-L1317
-[vicap-main-1319]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1319
-[vicap-main-1321]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1321-L1336
-[vicap-main-1579]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1579-L1587
-[vicap-main-1589]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1589-L1598
-[vicap-main-1600]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1600-L1604
-[vicap-main-1613]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1613-L1650
-[vicap-main-1651]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1651-L1679
-[vicap-main-1680]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1680-L1682
-[vicap-main-1687]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1687-L1692
-[vicap-main-1124]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1124
-[vicap-122]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L122-L151
-[vicap-153]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L153-L239
-[vicap-241]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L241-L244
-[vicap-246]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L246-L249
-[vicap-251]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L251-L254
-[vicap-256]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L256-L347
-[vicap-349]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L349-L369
-[vicap-371]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L371-L391
-[vicap-393]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L393-L416
-[vicap-473]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L473-L475
-[vo-34]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L34-L80
-[vo-83]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L83-L124
+[vicap-main-557]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L557-L913
+[vicap-main-921]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L921-L928
+[vicap-main-930]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L930-L952
+[vicap-main-957]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L957-L1049
+[vicap-main-1098]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1098-L1102
+[vicap-main-1104]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1104-L1109
+[vicap-main-1112]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1112-L1168
+[vicap-main-1170]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1170-L1283
+[vicap-main-1289]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1289-L1293
+[vicap-main-1295]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1295-L1315
+[vicap-main-1317]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1317
+[vicap-main-1319]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1319-L1333
+[vicap-main-1604]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1604-L1611
+[vicap-main-1613]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1613-L1621
+[vicap-main-1623]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1623-L1627
+[vicap-main-1636]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1636-L1670
+[vicap-main-1671]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1671-L1699
+[vicap-main-1700]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1700-L1702
+[vicap-main-1707]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1707-L1712
+[vicap-main-1109]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1109
+[vicap-120]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L120-L146
+[vicap-148]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L148-L246
+[vicap-248]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L248
+[vicap-250]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L250-L252
+[vicap-254]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L254-L256
+[vicap-258]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L258-L356
+[vicap-358]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L358-L378
+[vicap-380]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L380-L400
+[vicap-402]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L402-L422
+[vicap-518]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L518
+[vo-34]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/vo_test_case.c#L34-L73
+[vo-75]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/vo_test_case.c#L75-L115
 
 ## Build Steps
 

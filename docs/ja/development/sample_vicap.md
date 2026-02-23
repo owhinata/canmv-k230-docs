@@ -51,7 +51,7 @@ VICAP ハードウェアモジュール（Sensor、VI、ISP、Dewarp）の詳細
 
 コマンドライン引数を解析し、動作モード、コネクタタイプ、デバイス/チャネルパラメータ、出力設定を構成します。
 
-**Source:** [`main()` L519–L947][vicap-main-519]
+**Source:** [`main()` L557–L913][vicap-main-557]
 
 MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）を使用。
 
@@ -59,7 +59,7 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 ディスプレイコネクタ情報を取得し、出力解像度を決定します。
 
-**Source:** [`main()` L955–L962][vicap-main-955]
+**Source:** [`main()` L921–L928][vicap-main-921]
 
 | API コール | 目的 |
 |-----------|------|
@@ -69,7 +69,7 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 設定されたセンサータイプのセンサー能力（解像度、フォーマット）を取得します。
 
-**Source:** [`main()` L964–L985][vicap-main-964]
+**Source:** [`main()` L930–L952][vicap-main-930]
 
 | API コール | 目的 |
 |-----------|------|
@@ -79,7 +79,7 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 入力ウィンドウ、ISP パイプライン制御（AE、AWB、HDR、DNR3）、動作モード、オプションの Dewarp を設定します。ロードイメージモードでは RAW 画像ファイルをデバイスに読み込みます。
 
-**Source:** [`main()` L990–L1072][vicap-main-990]
+**Source:** [`main()` L957–L1049][vicap-main-957]
 
 | API コール | 目的 |
 |-----------|------|
@@ -90,7 +90,7 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 ディスプレイコネクタハードウェアをオープンし、初期化します。
 
-**Source:** [`main()` L1113–L1117][vicap-main-1113] → [`sample_vicap_vo_init()`][vicap-122]
+**Source:** [`main()` L1098–L1102][vicap-main-1098] → [`sample_vicap_vo_init()`][vicap-120]
 
 | API コール | 目的 |
 |-----------|------|
@@ -103,10 +103,10 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 ピクセルフォーマットと解像度に基づいてチャネルごとのバッファサイズを計算し、ビデオバッファプールを初期化します。`vb_exit()` を `atexit()` で登録します。
 
-**Source:** [`main()` L1119–L1124][vicap-main-1119]
+**Source:** [`main()` L1104–L1109][vicap-main-1104]
 
-- [`sample_vicap_vb_init()`][vicap-256] — バッファプールサイズを計算し VB を初期化
-- [`vb_exit()`][vicap-473] — クリーンアップ用に `atexit` で登録
+- [`sample_vicap_vb_init()`][vicap-258] — バッファプールサイズを計算し VB を初期化
+- [`vb_exit()`][vicap-518] — クリーンアップ用に `atexit` で登録
 
 | API コール | 目的 |
 |-----------|------|
@@ -118,7 +118,7 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 有効な各チャネルの出力ウィンドウ、クロップ領域、ピクセルフォーマット、バッファ数、フレームレートを設定します。
 
-**Source:** [`main()` L1127–L1175][vicap-main-1127]
+**Source:** [`main()` L1112–L1168][vicap-main-1112]
 
 | API コール | 目的 |
 |-----------|------|
@@ -129,10 +129,10 @@ MPP API 呼び出しなし — 標準 C の引数解析（`strcmp`、`atoi`）�
 
 VICAP 出力チャネルを VO ディスプレイレイヤーに接続します。回転値 17〜19 の場合、VI と VO の間に GDMA チャネルが挿入されます。それ以外の場合、VI が VO に直接バインドされます。
 
-**Source:** [`main()` L1177–L1283][vicap-main-1177]
+**Source:** [`main()` L1170–L1283][vicap-main-1170]
 
-- [`sample_vicap_bind_vo()`][vicap-349] — VI から VO への直接バインド（GDMA なし）
-- [`dma_dev_attr_init()`][vicap-393] — GDMA デバイスの初期化（回転パス）
+- [`sample_vicap_bind_vo()`][vicap-358] — VI から VO への直接バインド（GDMA なし）
+- [`dma_dev_attr_init()`][vicap-402] — GDMA デバイスの初期化（回転パス）
 
 **直接バインド（GDMA なし）:**
 
@@ -158,8 +158,8 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 **Source:** [`main()` L1289–L1293][vicap-main-1289]
 
-- [`sample_vicap_vo_layer_init()`][vicap-153] — レイヤー/OSD 作成のオーケストレーション
-- [`vo_creat_layer_test()`][vo-83] — ビデオレイヤーの作成
+- [`sample_vicap_vo_layer_init()`][vicap-148] — レイヤー/OSD 作成のオーケストレーション
+- [`vo_creat_layer_test()`][vo-75] — ビデオレイヤーの作成
 - [`vo_creat_osd_test()`][vo-34] — OSD レイヤーの作成
 
 | API コール | 目的 |
@@ -173,7 +173,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 有効な各 VICAP デバイスを初期化し、フレームキャプチャを開始します。
 
-**Source:** [`main()` L1295–L1317][vicap-main-1295]
+**Source:** [`main()` L1295–L1315][vicap-main-1295]
 
 | API コール | 目的 |
 |-----------|------|
@@ -184,7 +184,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 ディスプレイ出力を有効化します。
 
-**Source:** [`main()` L1319][vicap-main-1319] → [`sample_vicap_vo_enable()`][vicap-241]
+**Source:** [`main()` L1317][vicap-main-1317] → [`sample_vicap_vo_enable()`][vicap-248]
 
 | API コール | 目的 |
 |-----------|------|
@@ -194,7 +194,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 スレーブモードが有効な場合、外部同期信号生成のために VICAP スレーブタイミングパラメータを設定します。
 
-**Source:** [`main()` L1321–L1336][vicap-main-1321]
+**Source:** [`main()` L1319–L1333][vicap-main-1319]
 
 | API コール | 目的 |
 |-----------|------|
@@ -207,7 +207,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 1. スレーブモード無効化
 
-**Source:** [`main()` L1579–L1587][vicap-main-1579]
+**Source:** [`main()` L1604–L1611][vicap-main-1604]
 
 | API コール | 目的 |
 |-----------|------|
@@ -215,7 +215,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 2. VICAP ストリーム停止
 
-**Source:** [`main()` L1589–L1598][vicap-main-1589]
+**Source:** [`main()` L1613–L1621][vicap-main-1613]
 
 | API コール | 目的 |
 |-----------|------|
@@ -223,7 +223,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 3. VICAP デバイス解放
 
-**Source:** [`main()` L1600–L1604][vicap-main-1600]
+**Source:** [`main()` L1623–L1627][vicap-main-1623]
 
 | API コール | 目的 |
 |-----------|------|
@@ -233,10 +233,10 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 ビデオディスプレイレイヤーと OSD オーバーレイを無効化します。
 
-**Source:** [`main()` L1613–L1650][vicap-main-1613]
+**Source:** [`main()` L1636–L1670][vicap-main-1636]
 
-- [`sample_vicap_disable_vo_layer()`][vicap-246]
-- [`sample_vicap_disable_vo_osd()`][vicap-251]
+- [`sample_vicap_disable_vo_layer()`][vicap-250]
+- [`sample_vicap_disable_vo_osd()`][vicap-254]
 
 | API コール | 目的 |
 |-----------|------|
@@ -245,7 +245,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 5. GDMA 解放（使用時）
 
-**Source:** [`main()` L1651–L1679][vicap-main-1651]
+**Source:** [`main()` L1671–L1699][vicap-main-1671]
 
 | API コール | 目的 |
 |-----------|------|
@@ -255,7 +255,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 6. VI–VO アンバインド（GDMA 未使用時）
 
-**Source:** [`main()` L1680–L1682][vicap-main-1680] → [`sample_vicap_unbind_vo()`][vicap-371]
+**Source:** [`main()` L1700–L1702][vicap-main-1700] → [`sample_vicap_unbind_vo()`][vicap-380]
 
 | API コール | 目的 |
 |-----------|------|
@@ -263,7 +263,7 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 7. GDMA デバイス停止
 
-**Source:** [`main()` L1687–L1692][vicap-main-1687]
+**Source:** [`main()` L1707–L1712][vicap-main-1707]
 
 | API コール | 目的 |
 |-----------|------|
@@ -271,44 +271,44 @@ VICAP 出力チャネルを VO ディスプレイレイヤーに接続します�
 
 #### 8. VB 解放
 
-**Source:** registered via [`atexit()` L1124][vicap-main-1124] → [`vb_exit()`][vicap-473]
+**Source:** registered via [`atexit()` L1109][vicap-main-1109] → [`vb_exit()`][vicap-518]
 
 | API コール | 目的 |
 |-----------|------|
 | `kd_mpi_vb_exit()` | VB サブシステムを終了 |
 
-[vicap-main-519]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L519-L947
-[vicap-main-955]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L955-L962
-[vicap-main-964]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L964-L985
-[vicap-main-990]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L990-L1072
-[vicap-main-1113]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1113-L1117
-[vicap-main-1119]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1119-L1124
-[vicap-main-1127]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1127-L1175
-[vicap-main-1177]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1177-L1283
-[vicap-main-1289]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1289-L1293
-[vicap-main-1295]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1295-L1317
-[vicap-main-1319]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1319
-[vicap-main-1321]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1321-L1336
-[vicap-main-1579]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1579-L1587
-[vicap-main-1589]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1589-L1598
-[vicap-main-1600]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1600-L1604
-[vicap-main-1613]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1613-L1650
-[vicap-main-1651]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1651-L1679
-[vicap-main-1680]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1680-L1682
-[vicap-main-1687]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1687-L1692
-[vicap-main-1124]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L1124
-[vicap-122]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L122-L151
-[vicap-153]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L153-L239
-[vicap-241]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L241-L244
-[vicap-246]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L246-L249
-[vicap-251]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L251-L254
-[vicap-256]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L256-L347
-[vicap-349]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L349-L369
-[vicap-371]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L371-L391
-[vicap-393]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L393-L416
-[vicap-473]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/sample_vicap.c#L473-L475
-[vo-34]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L34-L80
-[vo-83]: https://github.com/owhinata/canmv-k230/blob/db18cde/apps/sample_vicap/src/vo_test_case.c#L83-L124
+[vicap-main-557]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L557-L913
+[vicap-main-921]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L921-L928
+[vicap-main-930]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L930-L952
+[vicap-main-957]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L957-L1049
+[vicap-main-1098]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1098-L1102
+[vicap-main-1104]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1104-L1109
+[vicap-main-1112]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1112-L1168
+[vicap-main-1170]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1170-L1283
+[vicap-main-1289]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1289-L1293
+[vicap-main-1295]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1295-L1315
+[vicap-main-1317]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1317
+[vicap-main-1319]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1319-L1333
+[vicap-main-1604]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1604-L1611
+[vicap-main-1613]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1613-L1621
+[vicap-main-1623]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1623-L1627
+[vicap-main-1636]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1636-L1670
+[vicap-main-1671]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1671-L1699
+[vicap-main-1700]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1700-L1702
+[vicap-main-1707]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1707-L1712
+[vicap-main-1109]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L1109
+[vicap-120]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L120-L146
+[vicap-148]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L148-L246
+[vicap-248]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L248
+[vicap-250]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L250-L252
+[vicap-254]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L254-L256
+[vicap-258]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L258-L356
+[vicap-358]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L358-L378
+[vicap-380]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L380-L400
+[vicap-402]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L402-L422
+[vicap-518]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/sample_vicap.c#L518
+[vo-34]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/vo_test_case.c#L34-L73
+[vo-75]: https://github.com/owhinata/canmv-k230/blob/13a92a6/apps/sample_vicap/src/vo_test_case.c#L75-L115
 
 ## ビルド手順
 
