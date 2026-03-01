@@ -91,9 +91,8 @@ def main():
     # 3. シミュレーション実行
     # ==========================================
     print("\n[3/4] シミュレーション実行中...")
-    # preprocess=True の kmodel には float32 に変換して渡す
-    input_float = input_data.astype(np.float32)
-    simulator.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(input_float))
+    # preprocess=True の kmodel には uint8 をそのまま渡す (内部で前処理される)
+    simulator.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(input_data))
     simulator.run()
     print("  完了")
 
