@@ -46,6 +46,7 @@ plugins:
             セットアップ: Setup
             開発: Development
             技術情報: Technical References
+            AI開発: AI Development
 
 nav:
   - index.md
@@ -60,6 +61,8 @@ nav:
       - development/coremark.md
       - development/sample_vicap.md
       - development/sample_face_ae.md
+  - AI開発:
+      - ai/face_detect.md
   - 技術情報:
       - technical/usb_cdc_ether.md
       - technical/bigcore_rtsmart_mpp.md
