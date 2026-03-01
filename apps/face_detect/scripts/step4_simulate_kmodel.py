@@ -2,11 +2,12 @@
 =============================================
 preprocess=True, uint8 入力の kmodel をシミュレーション実行する。
 
-チュートリアル版との違い:
-  - テスト入力を uint8 で生成 (preprocess=True に合わせる)
-  - 入力は [0, 255] の uint8 値をそのまま渡す
+使い方:
+  python step4_simulate_kmodel.py                    # SDK 同梱画像を使用
+  python step4_simulate_kmodel.py --image photo.png  # 指定画像を使用
 """
 
+import argparse
 import os
 import subprocess
 import sys
@@ -32,8 +33,8 @@ KMODEL_PATH = os.path.join(DUMP_PATH, "mobile_retinaface.kmodel")
 
 INPUT_H, INPUT_W = 320, 320
 
-# テスト用顔画像
-TEST_IMAGE_PATH = os.path.join(
+# デフォルトのテスト用顔画像
+DEFAULT_IMAGE_PATH = os.path.join(
     PROJECT_ROOT,
     "k230_sdk", "src", "big", "nncase", "examples",
     "image_face_detect", "data", "face_500x500.jpg",
@@ -53,6 +54,13 @@ def load_test_image_uint8(image_path, input_h, input_w):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="実機用 kmodel シミュレーション")
+    parser.add_argument("--image", type=str, default=None,
+                        help="テスト用画像パス (未指定時は SDK 同梱画像を使用)")
+    args = parser.parse_args()
+
+    image_path = args.image if args.image else DEFAULT_IMAGE_PATH
+
     print("=" * 60)
     print("Step 4: 実機用 kmodel シミュレーション実行")
     print("=" * 60)
@@ -60,6 +68,10 @@ def main():
     if not os.path.exists(KMODEL_PATH):
         print(f"ERROR: {KMODEL_PATH} が見つかりません。")
         print("先に step3_compile_kmodel.py を実行してください。")
+        return
+
+    if not os.path.exists(image_path):
+        print(f"ERROR: 画像が見つかりません: {image_path}")
         return
 
     # ==========================================
@@ -78,8 +90,8 @@ def main():
     # kmodel が期待する入力 dtype を動的に取得 (公式スクリプトと同じ方法)
     input_dtype = simulator.get_input_desc(0).dtype
     print(f"\n[2/4] 入力データ準備 (kmodel 期待型: {input_dtype})")
-    print(f"  画像: {os.path.basename(TEST_IMAGE_PATH)}")
-    input_data = load_test_image_uint8(TEST_IMAGE_PATH, INPUT_H, INPUT_W)
+    print(f"  画像: {image_path}")
+    input_data = load_test_image_uint8(image_path, INPUT_H, INPUT_W)
     input_data = input_data.astype(input_dtype)
     print(f"  shape = {input_data.shape}")
     print(f"  dtype = {input_data.dtype}")
