@@ -5,7 +5,7 @@ simplified.onnx を nncase で K230 向け kmodel にコンパイルする。
 チュートリアル版との違い:
   - preprocess=True: kmodel が uint8->float32 変換と mean/std 正規化を行う
   - input_type=uint8: カメラからの生データをそのまま入力可能
-  - mean=[104, 117, 123], std=[1, 1, 1]: BGR mean subtraction
+  - mean=[123, 117, 104], std=[1, 1, 1]: RGB 順の mean subtraction
 
 キャリブレーション:
   - デフォルト: ランダムデータ (初回コンパイル用)
@@ -89,7 +89,7 @@ def main():
     compile_options.preprocess = True
     compile_options.input_type = "uint8"
     compile_options.input_range = [0, 255]
-    compile_options.mean = [104, 117, 123]
+    compile_options.mean = [123, 117, 104]
     compile_options.std = [1, 1, 1]
     compile_options.input_shape = [1, 3, INPUT_H, INPUT_W]
     compile_options.input_layout = "NCHW"

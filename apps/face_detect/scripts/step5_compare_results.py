@@ -23,8 +23,8 @@ MODEL_PATH = os.path.join(
     "mobile_retinaface.onnx",
 )
 
-# kmodel の preprocess 設定と同じ mean/std
-MEAN = np.array([104, 117, 123], dtype=np.float32).reshape(1, 3, 1, 1)
+# kmodel の preprocess 設定と同じ mean/std (RGB 順: R=123, G=117, B=104)
+MEAN = np.array([123, 117, 104], dtype=np.float32).reshape(1, 3, 1, 1)
 STD = np.array([1, 1, 1], dtype=np.float32).reshape(1, 3, 1, 1)
 
 

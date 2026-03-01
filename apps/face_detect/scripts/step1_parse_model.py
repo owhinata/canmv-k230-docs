@@ -57,7 +57,7 @@ def main():
     print("1. 入力は1つ: float32 [1, 3, 320, 320] (NCHW)")
     print("2. 出力は9つ: 3スケール x (classification, bbox, landmark)")
     print("3. 実機用は preprocess=True, input_type=uint8")
-    print("4. mean=[104, 117, 123], std=[1, 1, 1]")
+    print("4. mean=[123, 117, 104], std=[1, 1, 1] (RGB順)")
 
 
 if __name__ == "__main__":
