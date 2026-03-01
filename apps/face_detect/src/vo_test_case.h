@@ -33,40 +33,38 @@
 #ifndef __VO_TEST_CASE_H__
 #define __VO_TEST_CASE_H__
 
+#include "k_type.h"
 #include "k_video_comm.h"
 #include "k_vo_comm.h"
-#include "k_type.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* End of #ifdef __cplusplus */
 
-typedef struct
-{
-    k_u64 osd_phy_addr;
-    void *osd_virt_addr;
-    k_pixel_format format;
-    k_vo_point offset;
-    k_vo_size act_size;
-    k_u32 size;
-    k_u32 stride;
-    k_u8 global_alptha;
+typedef struct {
+  k_u64 osd_phy_addr;
+  void *osd_virt_addr;
+  k_pixel_format format;
+  k_vo_point offset;
+  k_vo_size act_size;
+  k_u32 size;
+  k_u32 stride;
+  k_u8 global_alptha;
 } osd_info;
 
-typedef struct
-{
-    k_u64 layer_phy_addr;
-    k_pixel_format format;
-    k_vo_point offset;
-    k_vo_size act_size;
-    k_u32 size;
-    k_u32 stride;
-    k_u8 global_alptha;
+typedef struct {
+  k_u64 layer_phy_addr;
+  k_pixel_format format;
+  k_vo_point offset;
+  k_vo_size act_size;
+  k_u32 size;
+  k_u32 stride;
+  k_u8 global_alptha;
 
-    //only layer0、layer1
-    k_u32 func;
-    // only layer0
-    k_vo_scaler_attr attr;
+  // only layer0、layer1
+  k_u32 func;
+  // only layer0
+  k_vo_scaler_attr attr;
 
 } layer_info;
 

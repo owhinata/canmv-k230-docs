@@ -17,6 +17,7 @@ target_compile_options(face_detect PRIVATE
     -Wno-error -Wno-register -Wno-multichar -Wno-pessimizing-move
     -Wno-deprecated-declarations -Wno-unused-result -Wno-unused-variable
     -Wno-format -Wno-return-type -Wno-sign-compare -Wno-unused-label
+    -Wno-deprecated-enum-enum-conversion
 )
 
 # RT-Smart SDK includes (set by toolchain file)

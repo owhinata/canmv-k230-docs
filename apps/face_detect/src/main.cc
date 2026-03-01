@@ -397,8 +397,8 @@ int main(int argc, char *argv[]) {
   int capture_count = 0;
 
   if (argc < 3 || argc > 4) {
-    std::cerr << "Usage: " << argv[0]
-              << " <kmodel> <ae_roi> [capture_dir]" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <kmodel> <ae_roi> [capture_dir]"
+              << std::endl;
     std::cerr << "  ae_roi: 0=disable, 1=enable" << std::endl;
     std::cerr << "  capture_dir: directory to save PNG captures (optional)"
               << std::endl;
@@ -489,8 +489,8 @@ int main(int argc, char *argv[]) {
 
       // 'c' が押されていたらキャプチャ
       if (capture_requested.load() && capture_dir != nullptr) {
-        save_frame_as_png(vbvaddr, ISP_CHN1_HEIGHT, ISP_CHN1_WIDTH,
-                          capture_dir, capture_count++);
+        save_frame_as_png(vbvaddr, ISP_CHN1_HEIGHT, ISP_CHN1_WIDTH, capture_dir,
+                          capture_count++);
         capture_requested.store(false);
       }
 
