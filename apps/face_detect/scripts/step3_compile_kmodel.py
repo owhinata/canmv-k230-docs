@@ -51,7 +51,7 @@ def load_calib_images_uint8(image_dir, input_h, input_w):
         # HWC uint8 -> NCHW uint8
         arr = np.array(img, dtype=np.uint8)
         arr = arr.transpose(2, 0, 1)[np.newaxis, ...]  # (1, 3, H, W)
-        samples.append(arr.astype(np.float32))
+        samples.append(arr.astype(np.uint8))
         print(f"    {os.path.basename(path):25s} {img.size} -> {arr.shape}")
 
     return samples
@@ -132,18 +132,19 @@ def main():
         samples = load_calib_images_uint8(args.calib_dir, INPUT_H, INPUT_W)
         if not samples:
             print("  WARNING: 画像が見つかりません。ランダムデータで代用します。")
-            samples = [np.random.randint(0, 256, (1, 3, INPUT_H, INPUT_W)).astype(np.float32)
+            samples = [np.random.randint(0, 256, (1, 3, INPUT_H, INPUT_W)).astype(np.uint8)
                        for _ in range(3)]
+        else:
+            print(f"  読み込み画像数: {len(samples)}")
     else:
         print(f"\n[3/5] キャリブレーションデータ生成 (ランダムデータ)")
         print("  --calib-dir 未指定のためランダムデータを使用")
-        samples = [np.random.randint(0, 256, (1, 3, INPUT_H, INPUT_W)).astype(np.float32)
+        samples = [np.random.randint(0, 256, (1, 3, INPUT_H, INPUT_W)).astype(np.uint8)
                    for _ in range(3)]
 
     calib_data = [samples]
     ptq_options.samples_count = len(samples)
     ptq_options.set_tensor_data(calib_data)
-    print(f"  サンプル数: {len(samples)}")
 
     # ==========================================
     # 4. コンパイル実行
