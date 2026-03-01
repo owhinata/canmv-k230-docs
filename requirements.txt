@@ -4,7 +4,7 @@ mkdocs-static-i18n>=1.2
 
 # nncase (kmodel compilation & simulation)
 nncase==2.10.0
-nncase-k230==2.10.0
+nncase-kpu==2.10.0
 onnx
 onnxsim
 onnxruntime
