@@ -6,7 +6,7 @@
 
 - K230 SDK must be built (toolchain extracted, MPP libraries compiled)
 - SDK placed at `k230_sdk/` in the repository root
-- Python 3.8 or later (nncase, onnx, onnxruntime, Pillow, scikit-learn)
+- Python 3.8 or later (see `requirements.txt`)
 - Host OS: x86_64 Linux
 - CMake 3.16 or later
 
@@ -66,9 +66,11 @@ References:
 
 ### Python Environment Setup
 
+Use the `.venv` at the repository root (shared with MkDocs):
+
 ```bash
-python -m venv venv && source venv/bin/activate
-pip install nncase nncase-k230 onnx onnxsim onnxruntime Pillow scikit-learn
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### Script List
