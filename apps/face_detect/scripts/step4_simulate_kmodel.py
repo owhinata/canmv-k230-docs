@@ -73,11 +73,14 @@ def main():
     print(f"  出力数: {simulator.outputs_size}")
 
     # ==========================================
-    # 2. 入力データの準備 (uint8)
+    # 2. 入力データの準備
     # ==========================================
-    print("\n[2/4] 入力データ準備 (uint8)")
+    # kmodel が期待する入力 dtype を動的に取得 (公式スクリプトと同じ方法)
+    input_dtype = simulator.get_input_desc(0).dtype
+    print(f"\n[2/4] 入力データ準備 (kmodel 期待型: {input_dtype})")
     print(f"  画像: {os.path.basename(TEST_IMAGE_PATH)}")
     input_data = load_test_image_uint8(TEST_IMAGE_PATH, INPUT_H, INPUT_W)
+    input_data = input_data.astype(input_dtype)
     print(f"  shape = {input_data.shape}")
     print(f"  dtype = {input_data.dtype}")
     print(f"  range = [{input_data.min()}, {input_data.max()}]")
@@ -91,7 +94,6 @@ def main():
     # 3. シミュレーション実行
     # ==========================================
     print("\n[3/4] シミュレーション実行中...")
-    # preprocess=True の kmodel には uint8 をそのまま渡す (内部で前処理される)
     simulator.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(input_data))
     simulator.run()
     print("  完了")
