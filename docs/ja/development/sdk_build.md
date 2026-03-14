@@ -64,5 +64,5 @@ docker run -it --rm \
 | `toolchain/` | RISC-V クロスコンパイラ |
 
 !!! tip "ビルドスクリプト"
-    上記の手順をまとめたビルドスクリプトも利用できます:
+    上記の手順をまとめたビルドスクリプト (`./build_sdk.sh`) も利用できます:
     [owhinata/canmv-k230](https://github.com/owhinata/canmv-k230)

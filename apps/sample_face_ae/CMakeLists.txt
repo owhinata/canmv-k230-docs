@@ -1,6 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 project(sample_face_ae CXX)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/k230-deploy.cmake)
+k230_sdk_paths()
+
+set(_KMODEL ${CMAKE_CURRENT_SOURCE_DIR}/../face_detect/scripts/output/dump/mobile_retinaface.kmodel)
+
+k230_add_deploy_target(
+    DEPLOY_DIR /sharefs/sample_face_ae
+    DEPENDS sample_face_ae
+    FILES
+        $<TARGET_FILE:sample_face_ae>:sample_face_ae
+        ${_KMODEL}:mobile_retinaface.kmodel
+)
+k230_add_run_target(
+    COMMAND "/sharefs/sample_face_ae/sample_face_ae /sharefs/sample_face_ae/mobile_retinaface.kmodel 1"
+)
+
 add_executable(sample_face_ae
     src/main.cc
     src/face_ae_roi.cc
@@ -27,11 +43,6 @@ endif()
 if(NOT MPP_LIB_DIR)
     message(FATAL_ERROR "MPP_LIB_DIR not set. Use the bigcore toolchain file.")
 endif()
-
-# SDK root and path resolution
-file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/../../k230_sdk" _SDK_ROOT)
-set(_MPP_ROOT    ${_SDK_ROOT}/src/big/mpp)
-set(_NNCASE_ROOT ${_SDK_ROOT}/src/big/nncase/riscv64)
 
 target_include_directories(sample_face_ae PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

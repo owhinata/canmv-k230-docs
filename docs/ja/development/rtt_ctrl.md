@@ -30,14 +30,14 @@ Linux (littlecore)                    RT-Smart (bigcore)
 
 ### 有効化
 
-`scripts/build_sdk.sh` はデフォルトで `RT_USING_RTT_CTRL` を有効化します。
+`./build_sdk.sh` はデフォルトで `RT_USING_RTT_CTRL` を有効化します。
 
 ```bash
 # デフォルト（rtt-ctrl 有効）
-scripts/build_sdk.sh
+./build_sdk.sh
 
 # rtt-ctrl を無効にする場合
-scripts/build_sdk.sh --no-rtt-ctrl
+./build_sdk.sh --no-rtt-ctrl
 ```
 
 内部的には defconfig ソース (`configs/common_rttlinux.config`) に `#define RT_USING_RTT_CTRL` を追加します。
@@ -139,6 +139,6 @@ sudo dd if=output/k230_canmv_defconfig/images/big-core/rtt_system.bin \
 
 | ファイル | 役割 |
 |---------|------|
-| `scripts/build_sdk.sh` | `RT_USING_RTT_CTRL` の有効化処理 |
+| `./build_sdk.sh` | `RT_USING_RTT_CTRL` の有効化処理 |
 | `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/configs/common_rttlinux.config` | defconfig ソース（ビルド時に `rtconfig.h` へコピーされる） |
 | `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart カーネル設定（自動生成） |

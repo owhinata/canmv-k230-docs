@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 project(sample_vicap C)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/k230-deploy.cmake)
+
+k230_add_deploy_target(
+    DEPLOY_DIR /sharefs
+    DEPENDS sample_vicap
+    FILES $<TARGET_FILE:sample_vicap>:sample_vicap
+)
+k230_add_run_target(
+    COMMAND "/sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2"
+)
+
 # Source files (copied from SDK sample_vicap + sample_vo)
 add_executable(sample_vicap
     src/sample_vicap.c

@@ -146,41 +146,50 @@ FetchContent でビルド時に CoreMark ソースを自動取得するため、
 
 === "bigcore (RT-Smart)"
 
-    ### SCP で転送する
+    CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
     ```bash
-    scp build/coremark/coremark root@<K230のIPアドレス>:/sharefs/coremark
+    cmake --build build/coremark --target deploy   # ビルド + SCP 転送
+    cmake --build build/coremark --target run      # シリアル経由で実行 (Ctrl+C で終了)
     ```
 
-    !!! warning "/sharefs/ について"
-        転送先は `/sharefs/coremark` です（`/root/sharefs/` ではありません）。
-        `/sharefs/` は bigコアから直接アクセスできる vfat パーティション（`/dev/mmcblk1p4`）で、
-        K230 の Linux 側からも同じパスでアクセスできます。
+    ??? note "SCP + minicom による手動操作"
+        ### SCP で転送する
 
-    ### K230 bigコア（msh）で実行
+        ```bash
+        scp build/coremark/coremark root@<K230のIPアドレス>:/sharefs/coremark
+        ```
 
-    ```
-    msh /> /sharefs/coremark
-    2K performance run parameters for coremark.
-    CoreMark Size    : 666
-    Total ticks      : 13603
-    Total time (secs): 13.603000
-    Iterations/Sec   : 4410.791737
-    Iterations       : 60000
-    Compiler version : GCC12.0.1 20220505 (prerelease)
-    Compiler flags   : -O2
-    Memory location  : Please put data memory location here
-    		(e.g. code in flash, data on heap etc)
-    seedcrc          : 0xe9f5
-    [0]crclist       : 0xe714
-    [0]crcmatrix     : 0x1fd7
-    [0]crcstate      : 0x8e3a
-    [0]crcfinal      : 0xbd59
-    Correct operation validated. See README.md for run and reporting rules.
-    CoreMark 1.0 : 4410.791737 / GCC12.0.1 20220505 (prerelease) -O2 / Heap
-    ```
+        !!! warning "/sharefs/ について"
+            転送先は `/sharefs/coremark` です（`/root/sharefs/` ではありません）。
+            `/sharefs/` は bigコアから直接アクセスできる vfat パーティション（`/dev/mmcblk1p4`）で、
+            K230 の Linux 側からも同じパスでアクセスできます。
 
-    !!! tip "シリアル接続"
+        ### K230 bigコア（msh）で実行
+
+        ```
+        msh /> /sharefs/coremark
+        2K performance run parameters for coremark.
+        CoreMark Size    : 666
+        Total ticks      : 13603
+        Total time (secs): 13.603000
+        Iterations/Sec   : 4410.791737
+        Iterations       : 60000
+        Compiler version : GCC12.0.1 20220505 (prerelease)
+        Compiler flags   : -O2
+        Memory location  : Please put data memory location here
+        		(e.g. code in flash, data on heap etc)
+        seedcrc          : 0xe9f5
+        [0]crclist       : 0xe714
+        [0]crcmatrix     : 0x1fd7
+        [0]crcstate      : 0x8e3a
+        [0]crcfinal      : 0xbd59
+        Correct operation validated. See README.md for run and reporting rules.
+        CoreMark 1.0 : 4410.791737 / GCC12.0.1 20220505 (prerelease) -O2 / Heap
+        ```
+
+        ### シリアル接続
+
         - **小コア (Linux)**: `/dev/ttyACM0`（115200 bps）
         - **bigコア (RT-Smart msh)**: `/dev/ttyACM1`（115200 bps）
 
@@ -190,36 +199,45 @@ FetchContent でビルド時に CoreMark ソースを自動取得するため、
 
 === "littlecore (Linux)"
 
-    ### SCP で転送する
+    CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
     ```bash
-    scp build/coremark_linux/coremark root@<K230のIPアドレス>:/root/coremark
+    cmake --build build/coremark_linux --target deploy   # ビルド + SCP 転送
+    cmake --build build/coremark_linux --target run      # シリアル経由で実行 (Ctrl+C で終了)
     ```
 
-    ### K230 littleコア（Linux シェル）で実行
+    ??? note "SCP + minicom による手動操作"
+        ### SCP で転送する
 
-    ```
-    [root@canmv ~]# /root/coremark
-    2K performance run parameters for coremark.
-    CoreMark Size    : 666
-    Total ticks      : 12005
-    Total time (secs): 12.005000
-    Iterations/Sec   : 2498.958767
-    Iterations       : 30000
-    Compiler version : GCC10.2.0
-    Compiler flags   : -O2
-    Memory location  : Please put data memory location here
-    		(e.g. code in flash, data on heap etc)
-    seedcrc          : 0xe9f5
-    [0]crclist       : 0xe714
-    [0]crcmatrix     : 0x1fd7
-    [0]crcstate      : 0x8e3a
-    [0]crcfinal      : 0x5275
-    Correct operation validated. See README.md for run and reporting rules.
-    CoreMark 1.0 : 2498.958767 / GCC10.2.0 -O2 / Heap
-    ```
+        ```bash
+        scp build/coremark_linux/coremark root@<K230のIPアドレス>:/root/coremark
+        ```
 
-    !!! tip "シリアル接続"
+        ### K230 littleコア（Linux シェル）で実行
+
+        ```
+        [root@canmv ~]# /root/coremark
+        2K performance run parameters for coremark.
+        CoreMark Size    : 666
+        Total ticks      : 12005
+        Total time (secs): 12.005000
+        Iterations/Sec   : 2498.958767
+        Iterations       : 30000
+        Compiler version : GCC10.2.0
+        Compiler flags   : -O2
+        Memory location  : Please put data memory location here
+        		(e.g. code in flash, data on heap etc)
+        seedcrc          : 0xe9f5
+        [0]crclist       : 0xe714
+        [0]crcmatrix     : 0x1fd7
+        [0]crcstate      : 0x8e3a
+        [0]crcfinal      : 0x5275
+        Correct operation validated. See README.md for run and reporting rules.
+        CoreMark 1.0 : 2498.958767 / GCC10.2.0 -O2 / Heap
+        ```
+
+        ### シリアル接続
+
         - **小コア (Linux)**: `/dev/ttyACM0`（115200 bps）
         - **bigコア (RT-Smart msh)**: `/dev/ttyACM1`（115200 bps）
 
@@ -245,6 +263,56 @@ coremark <seed1> <seed2> <seed3> <iterations>
 ```bash
 /sharefs/coremark 0 0 0x66 50000
 ```
+
+---
+
+## CMake ターゲット { #cmake-targets }
+
+=== "bigcore (RT-Smart)"
+
+    ### 設定
+
+    ```bash
+    cmake -B build/coremark -S apps/coremark \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+    ```
+
+    ### ターゲット一覧
+
+    | ターゲット | コマンド | 説明 |
+    |-----------|---------|------|
+    | (デフォルト) | `cmake --build build/coremark` | C バイナリのビルド |
+    | `deploy` | `cmake --build build/coremark --target deploy` | ビルド + K230 `/sharefs/` への SCP 転送 |
+    | `run` | `cmake --build build/coremark --target run` | bigcore シリアル経由で実行 (Ctrl+C で終了) |
+
+=== "littlecore (Linux)"
+
+    ### 設定
+
+    ```bash
+    cmake -B build/coremark_linux -S apps/coremark \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-linux.cmake"
+    ```
+
+    ### ターゲット一覧
+
+    | ターゲット | コマンド | 説明 |
+    |-----------|---------|------|
+    | (デフォルト) | `cmake --build build/coremark_linux` | C バイナリのビルド |
+    | `deploy` | `cmake --build build/coremark_linux --target deploy` | ビルド + K230 `/root/` への SCP 転送 |
+    | `run` | `cmake --build build/coremark_linux --target run` | littlecore シリアル経由で実行 (Ctrl+C で終了) |
+
+### K230 接続設定
+
+CMake キャッシュ変数で接続先をカスタマイズできます:
+
+| 変数 | デフォルト | 説明 |
+|------|-----------|------|
+| `K230_IP` | (空 = 自動検出) | littlecore の IP アドレス |
+| `K230_USER` | `root` | SSH ユーザー |
+| `K230_SERIAL` | bigcore: `/dev/ttyACM1`、littlecore: `/dev/ttyACM0` | シリアルポート (run 用) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | littlecore シリアル (IP 自動検出用) |
+| `K230_BAUD` | `115200` | ボーレート |
 
 ## 将来の拡張
 

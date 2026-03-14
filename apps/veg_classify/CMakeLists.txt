@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(veg_classify CXX)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/k230-deploy.cmake)
+k230_sdk_paths()
+
 # Python training target (not built by default)
 # - Creates .venv and installs dependencies if needed
 # - Skips training if dataset unchanged (hash-based detection)
@@ -13,12 +16,10 @@ set(_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/output)
 # Dataset directory (cmake -DDATA_DIR=/path/to/data to override)
 set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data" CACHE PATH "Dataset directory for training")
 
-set(_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/scripts)
-
 add_custom_target(train
     COMMAND ${Python3_EXECUTABLE} -m venv ${_VENV_DIR}
     COMMAND ${_VENV_PYTHON} -m pip install -r ${_REQUIREMENTS} --quiet
-    COMMAND ${_CMAKE_SCRIPTS_DIR}/check_data_hash.sh
+    COMMAND ${_K230_SCRIPTS_DIR}/check_data_hash.sh
             ${DATA_DIR} ${_OUTPUT_DIR}
             ${_VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/train.py ${_OUTPUT_DIR} ${DATA_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -26,38 +27,16 @@ add_custom_target(train
     COMMENT "Training model (skipped if dataset unchanged)"
 )
 
-# --- K230 device settings ---
-set(K230_IP "" CACHE STRING "K230 IP address (empty = auto-detect via serial)")
-set(K230_USER "root" CACHE STRING "SSH user for K230")
-set(K230_DEPLOY_DIR "/sharefs/veg_classify" CACHE STRING "Deploy directory on K230")
-set(K230_SERIAL "/dev/ttyACM1" CACHE STRING "Serial port for K230 bigcore")
-set(K230_SERIAL_LC "/dev/ttyACM0" CACHE STRING "Serial port for K230 littlecore (IP auto-detect)")
-set(K230_BAUD "115200" CACHE STRING "Serial baud rate")
-
-add_custom_target(deploy
-    COMMAND ${CMAKE_COMMAND} -E env
-            "K230_USER=${K230_USER}"
-            "K230_IP=${K230_IP}"
-            "K230_SERIAL_LC=${K230_SERIAL_LC}"
-            "K230_BAUD=${K230_BAUD}"
-            "K230_DEPLOY_DIR=${K230_DEPLOY_DIR}"
-            ${_CMAKE_SCRIPTS_DIR}/deploy.sh
-            $<TARGET_FILE:veg_classify>:veg_classify
-            ${_OUTPUT_DIR}/best.kmodel:veg_classify.kmodel
-            ${_OUTPUT_DIR}/labels.txt:labels.txt
+k230_add_deploy_target(
+    DEPLOY_DIR /sharefs/veg_classify
     DEPENDS veg_classify train
-    USES_TERMINAL
-    COMMENT "Deploying to K230"
+    FILES
+        $<TARGET_FILE:veg_classify>:veg_classify
+        ${_OUTPUT_DIR}/best.kmodel:veg_classify.kmodel
+        ${_OUTPUT_DIR}/labels.txt:labels.txt
 )
-
-add_custom_target(run
-    COMMAND ${CMAKE_COMMAND} -E env
-            "K230_SERIAL=${K230_SERIAL}"
-            "K230_BAUD=${K230_BAUD}"
-            ${_CMAKE_SCRIPTS_DIR}/run.sh
-            "${K230_DEPLOY_DIR}/veg_classify ${K230_DEPLOY_DIR}/veg_classify.kmodel ${K230_DEPLOY_DIR}/labels.txt"
-    USES_TERMINAL
-    COMMENT "Running on K230 bigcore via ${K230_SERIAL}"
+k230_add_run_target(
+    COMMAND "/sharefs/veg_classify/veg_classify /sharefs/veg_classify/veg_classify.kmodel /sharefs/veg_classify/labels.txt"
 )
 
 add_executable(veg_classify
@@ -85,12 +64,6 @@ endif()
 if(NOT MPP_LIB_DIR)
     message(FATAL_ERROR "MPP_LIB_DIR not set. Use the bigcore toolchain file.")
 endif()
-
-# SDK root and path resolution
-file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/../../k230_sdk" _SDK_ROOT)
-set(_MPP_ROOT    ${_SDK_ROOT}/src/big/mpp)
-set(_NNCASE_ROOT ${_SDK_ROOT}/src/big/nncase/riscv64)
-set(_OPENCV_ROOT ${_SDK_ROOT}/src/big/utils/lib/opencv_thead)
 
 target_include_directories(veg_classify PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

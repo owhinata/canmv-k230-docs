@@ -146,41 +146,50 @@ Run from the repository root directory.
 
 === "bigcore (RT-Smart)"
 
-    ### Transfer via SCP
+    The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
     ```bash
-    scp build/coremark/coremark root@<K230_IP_ADDRESS>:/sharefs/coremark
+    cmake --build build/coremark --target deploy   # build + SCP transfer
+    cmake --build build/coremark --target run      # run via serial (Ctrl+C to disconnect)
     ```
 
-    !!! warning "About /sharefs/"
-        The correct destination is `/sharefs/coremark`, **not** `/root/sharefs/coremark`.
-        `/sharefs/` is a vfat partition (`/dev/mmcblk1p4`) directly accessible from the bigcore.
-        It is also accessible from the Linux smallcore under the same path.
+    ??? note "Manual operation via SCP + minicom"
+        ### Transfer via SCP
 
-    ### Run on the K230 bigcore (msh)
+        ```bash
+        scp build/coremark/coremark root@<K230_IP_ADDRESS>:/sharefs/coremark
+        ```
 
-    ```
-    msh /> /sharefs/coremark
-    2K performance run parameters for coremark.
-    CoreMark Size    : 666
-    Total ticks      : 13603
-    Total time (secs): 13.603000
-    Iterations/Sec   : 4410.791737
-    Iterations       : 60000
-    Compiler version : GCC12.0.1 20220505 (prerelease)
-    Compiler flags   : -O2
-    Memory location  : Please put data memory location here
-    		(e.g. code in flash, data on heap etc)
-    seedcrc          : 0xe9f5
-    [0]crclist       : 0xe714
-    [0]crcmatrix     : 0x1fd7
-    [0]crcstate      : 0x8e3a
-    [0]crcfinal      : 0xbd59
-    Correct operation validated. See README.md for run and reporting rules.
-    CoreMark 1.0 : 4410.791737 / GCC12.0.1 20220505 (prerelease) -O2 / Heap
-    ```
+        !!! warning "About /sharefs/"
+            The correct destination is `/sharefs/coremark`, **not** `/root/sharefs/coremark`.
+            `/sharefs/` is a vfat partition (`/dev/mmcblk1p4`) directly accessible from the bigcore.
+            It is also accessible from the Linux smallcore under the same path.
 
-    !!! tip "Serial connection"
+        ### Run on the K230 bigcore (msh)
+
+        ```
+        msh /> /sharefs/coremark
+        2K performance run parameters for coremark.
+        CoreMark Size    : 666
+        Total ticks      : 13603
+        Total time (secs): 13.603000
+        Iterations/Sec   : 4410.791737
+        Iterations       : 60000
+        Compiler version : GCC12.0.1 20220505 (prerelease)
+        Compiler flags   : -O2
+        Memory location  : Please put data memory location here
+        		(e.g. code in flash, data on heap etc)
+        seedcrc          : 0xe9f5
+        [0]crclist       : 0xe714
+        [0]crcmatrix     : 0x1fd7
+        [0]crcstate      : 0x8e3a
+        [0]crcfinal      : 0xbd59
+        Correct operation validated. See README.md for run and reporting rules.
+        CoreMark 1.0 : 4410.791737 / GCC12.0.1 20220505 (prerelease) -O2 / Heap
+        ```
+
+        ### Serial Connection
+
         - **Smallcore (Linux)**: `/dev/ttyACM0` at 115200 bps
         - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
@@ -190,36 +199,45 @@ Run from the repository root directory.
 
 === "littlecore (Linux)"
 
-    ### Transfer via SCP
+    The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
     ```bash
-    scp build/coremark_linux/coremark root@<K230_IP_ADDRESS>:/root/coremark
+    cmake --build build/coremark_linux --target deploy   # build + SCP transfer
+    cmake --build build/coremark_linux --target run      # run via serial (Ctrl+C to disconnect)
     ```
 
-    ### Run on the K230 littlecore (Linux shell)
+    ??? note "Manual operation via SCP + minicom"
+        ### Transfer via SCP
 
-    ```
-    [root@canmv ~]# /root/coremark
-    2K performance run parameters for coremark.
-    CoreMark Size    : 666
-    Total ticks      : 12005
-    Total time (secs): 12.005000
-    Iterations/Sec   : 2498.958767
-    Iterations       : 30000
-    Compiler version : GCC10.2.0
-    Compiler flags   : -O2
-    Memory location  : Please put data memory location here
-    		(e.g. code in flash, data on heap etc)
-    seedcrc          : 0xe9f5
-    [0]crclist       : 0xe714
-    [0]crcmatrix     : 0x1fd7
-    [0]crcstate      : 0x8e3a
-    [0]crcfinal      : 0x5275
-    Correct operation validated. See README.md for run and reporting rules.
-    CoreMark 1.0 : 2498.958767 / GCC10.2.0 -O2 / Heap
-    ```
+        ```bash
+        scp build/coremark_linux/coremark root@<K230_IP_ADDRESS>:/root/coremark
+        ```
 
-    !!! tip "Serial connection"
+        ### Run on the K230 littlecore (Linux shell)
+
+        ```
+        [root@canmv ~]# /root/coremark
+        2K performance run parameters for coremark.
+        CoreMark Size    : 666
+        Total ticks      : 12005
+        Total time (secs): 12.005000
+        Iterations/Sec   : 2498.958767
+        Iterations       : 30000
+        Compiler version : GCC10.2.0
+        Compiler flags   : -O2
+        Memory location  : Please put data memory location here
+        		(e.g. code in flash, data on heap etc)
+        seedcrc          : 0xe9f5
+        [0]crclist       : 0xe714
+        [0]crcmatrix     : 0x1fd7
+        [0]crcstate      : 0x8e3a
+        [0]crcfinal      : 0x5275
+        Correct operation validated. See README.md for run and reporting rules.
+        CoreMark 1.0 : 2498.958767 / GCC10.2.0 -O2 / Heap
+        ```
+
+        ### Serial Connection
+
         - **Smallcore (Linux)**: `/dev/ttyACM0` at 115200 bps
         - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
@@ -245,6 +263,56 @@ Example: run with 50000 iterations:
 ```bash
 /sharefs/coremark 0 0 0x66 50000
 ```
+
+---
+
+## CMake Targets { #cmake-targets }
+
+=== "bigcore (RT-Smart)"
+
+    ### Configuration
+
+    ```bash
+    cmake -B build/coremark -S apps/coremark \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+    ```
+
+    ### Target List
+
+    | Target | Command | Description |
+    |--------|---------|-------------|
+    | (default) | `cmake --build build/coremark` | Build C binary |
+    | `deploy` | `cmake --build build/coremark --target deploy` | Build + SCP transfer to K230 `/sharefs/` |
+    | `run` | `cmake --build build/coremark --target run` | Run via bigcore serial (Ctrl+C to disconnect) |
+
+=== "littlecore (Linux)"
+
+    ### Configuration
+
+    ```bash
+    cmake -B build/coremark_linux -S apps/coremark \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-linux.cmake"
+    ```
+
+    ### Target List
+
+    | Target | Command | Description |
+    |--------|---------|-------------|
+    | (default) | `cmake --build build/coremark_linux` | Build C binary |
+    | `deploy` | `cmake --build build/coremark_linux --target deploy` | Build + SCP transfer to K230 `/root/` |
+    | `run` | `cmake --build build/coremark_linux --target run` | Run via littlecore serial (Ctrl+C to disconnect) |
+
+### K230 Connection Settings
+
+Customize connection parameters via CMake cache variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `K230_IP` | (empty = auto-detect) | Littlecore IP address |
+| `K230_USER` | `root` | SSH user |
+| `K230_SERIAL` | bigcore: `/dev/ttyACM1`, littlecore: `/dev/ttyACM0` | Serial port (for run) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | Littlecore serial (for IP auto-detect) |
+| `K230_BAUD` | `115200` | Baud rate |
 
 ## Future Extensions
 

@@ -246,30 +246,39 @@ Run from the repository root directory.
 
 === "bigcore (RT-Smart)"
 
-    ### Transfer via SCP
-
-    If K230 is connected to your network, transfer the ELF to `/sharefs/` using `scp`:
+    The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
     ```bash
-    scp build/hello_world/hello_world root@<K230_IP_ADDRESS>:/sharefs/hello_world
+    cmake --build build/hello_world --target deploy   # build + SCP transfer
+    cmake --build build/hello_world --target run      # run via serial (Ctrl+C to disconnect)
     ```
 
-    !!! warning "About /sharefs/"
-        The correct destination is `/sharefs/hello_world`, **not** `/root/sharefs/hello_world`.
-        `/sharefs/` is a vfat partition (`/dev/mmcblk1p4`) directly accessible from the bigcore.
-        It is also accessible from the Linux smallcore under the same path.
-        `/root/sharefs/` is a different directory and is **not** accessible from the bigcore.
+    ??? note "Manual operation via SCP + minicom"
+        ### Transfer via SCP
 
-    ### Run on the K230 bigcore (msh)
+        If K230 is connected to your network, transfer the ELF to `/sharefs/` using `scp`:
 
-    On the K230 serial console (ACM1), run the binary from the RT-Smart msh prompt:
+        ```bash
+        scp build/hello_world/hello_world root@<K230_IP_ADDRESS>:/sharefs/hello_world
+        ```
 
-    ```
-    msh /> /sharefs/hello_world
-    Hello, K230 bigcore!
-    ```
+        !!! warning "About /sharefs/"
+            The correct destination is `/sharefs/hello_world`, **not** `/root/sharefs/hello_world`.
+            `/sharefs/` is a vfat partition (`/dev/mmcblk1p4`) directly accessible from the bigcore.
+            It is also accessible from the Linux smallcore under the same path.
+            `/root/sharefs/` is a different directory and is **not** accessible from the bigcore.
 
-    !!! tip "Serial connection"
+        ### Run on the K230 bigcore (msh)
+
+        On the K230 serial console (ACM1), run the binary from the RT-Smart msh prompt:
+
+        ```
+        msh /> /sharefs/hello_world
+        Hello, K230 bigcore!
+        ```
+
+        ### Serial Connection
+
         - **Smallcore (Linux)**: `/dev/ttyACM0` at 115200 bps
         - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
@@ -279,27 +288,86 @@ Run from the repository root directory.
 
 === "littlecore (Linux)"
 
-    ### Transfer via SCP
-
-    If K230 is connected to your network, transfer the ELF to `/root/` using `scp`:
+    The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
     ```bash
-    scp build/hello_world_linux/hello_world root@<K230_IP_ADDRESS>:/root/hello_world
+    cmake --build build/hello_world_linux --target deploy   # build + SCP transfer
+    cmake --build build/hello_world_linux --target run      # run via serial (Ctrl+C to disconnect)
     ```
 
-    ### Run on the K230 littlecore (Linux shell)
+    ??? note "Manual operation via SCP + minicom"
+        ### Transfer via SCP
 
-    On the K230 serial console (ACM0), run the binary from the Linux shell:
+        If K230 is connected to your network, transfer the ELF to `/root/` using `scp`:
 
-    ```
-    [root@canmv ~]# /root/hello_world
-    Hello, K230 littlecore!
-    ```
+        ```bash
+        scp build/hello_world_linux/hello_world root@<K230_IP_ADDRESS>:/root/hello_world
+        ```
 
-    !!! tip "Serial connection"
+        ### Run on the K230 littlecore (Linux shell)
+
+        On the K230 serial console (ACM0), run the binary from the Linux shell:
+
+        ```
+        [root@canmv ~]# /root/hello_world
+        Hello, K230 littlecore!
+        ```
+
+        ### Serial Connection
+
         - **Smallcore (Linux)**: `/dev/ttyACM0` at 115200 bps
         - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
         ```bash
         minicom -D /dev/ttyACM0 -b 115200
         ```
+
+---
+
+## CMake Targets { #cmake-targets }
+
+=== "bigcore (RT-Smart)"
+
+    ### Configuration
+
+    ```bash
+    cmake -B build/hello_world -S apps/hello_world \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+    ```
+
+    ### Target List
+
+    | Target | Command | Description |
+    |--------|---------|-------------|
+    | (default) | `cmake --build build/hello_world` | Build C binary |
+    | `deploy` | `cmake --build build/hello_world --target deploy` | Build + SCP transfer to K230 `/sharefs/` |
+    | `run` | `cmake --build build/hello_world --target run` | Run via bigcore serial (Ctrl+C to disconnect) |
+
+=== "littlecore (Linux)"
+
+    ### Configuration
+
+    ```bash
+    cmake -B build/hello_world_linux -S apps/hello_world \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-linux.cmake"
+    ```
+
+    ### Target List
+
+    | Target | Command | Description |
+    |--------|---------|-------------|
+    | (default) | `cmake --build build/hello_world_linux` | Build C binary |
+    | `deploy` | `cmake --build build/hello_world_linux --target deploy` | Build + SCP transfer to K230 `/root/` |
+    | `run` | `cmake --build build/hello_world_linux --target run` | Run via littlecore serial (Ctrl+C to disconnect) |
+
+### K230 Connection Settings
+
+Customize connection parameters via CMake cache variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `K230_IP` | (empty = auto-detect) | Littlecore IP address |
+| `K230_USER` | `root` | SSH user |
+| `K230_SERIAL` | bigcore: `/dev/ttyACM1`, littlecore: `/dev/ttyACM0` | Serial port (for run) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | Littlecore serial (for IP auto-detect) |
+| `K230_BAUD` | `115200` | Baud rate |
