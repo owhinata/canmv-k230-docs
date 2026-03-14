@@ -449,23 +449,93 @@ sample_vicap: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 
 ## K230 への転送・実行
 
-### SCP で転送
+CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
 ```bash
-scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
+cmake --build build/sample_vicap --target deploy   # ビルド + SCP 転送
+cmake --build build/sample_vicap --target run      # シリアル経由で実行 (Ctrl+C で終了)
 ```
 
-### K230 bigcore (msh) で実行
+### 手動で転送・実行する場合
 
-K230 のシリアルコンソール (ACM1) で実行します:
+??? note "SCP + minicom による手動操作"
+    #### SCP で転送
 
-```
-msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
-```
+    ```bash
+    scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
+    ```
 
-!!! tip "シリアル接続"
+    #### K230 bigcore (msh) で実行
+
+    K230 のシリアルコンソール (ACM1) で実行します:
+
+    ```
+    msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
+    ```
+
+    #### シリアル接続
+
     - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1`、115200 bps
 
     ```bash
     minicom -D /dev/ttyACM1 -b 115200
     ```
+
+---
+
+## CMake ターゲット { #cmake-targets }
+
+### 設定
+
+```bash
+cmake -B build/sample_vicap -S apps/sample_vicap \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### ターゲット一覧
+
+| ターゲット | コマンド | 説明 |
+|-----------|---------|------|
+| (デフォルト) | `cmake --build build/sample_vicap` | C バイナリのビルド |
+| `deploy` | `cmake --build build/sample_vicap --target deploy` | ビルド + K230 への SCP 転送 |
+| `run` | `cmake --build build/sample_vicap --target run` | シリアル経由で K230 実行 (Ctrl+C で終了) |
+
+### deploy
+
+バイナリのビルドと K230 への SCP 転送を一括実行します:
+
+```bash
+cmake --build build/sample_vicap --target deploy
+```
+
+転送されるファイル:
+
+| ローカル | K230 上のパス |
+|---------|-------------|
+| `build/sample_vicap/sample_vicap` | `/sharefs/sample_vicap` |
+
+### run
+
+シリアルポート経由で K230 bigcore (msh) にコマンドを送信し、出力をリアルタイム表示します:
+
+```bash
+cmake --build build/sample_vicap --target run
+```
+
+- キーボード入力はそのまま K230 に転送されます（`q` + Enter でアプリ終了）
+- **Ctrl+C** でシリアル接続を切断
+
+!!! note "デフォルトの実行コマンド"
+    `run` ターゲットは `sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2` を実行します。別のセンサー設定で実行する場合は手動でシリアル接続してください。
+
+### K230 接続設定
+
+CMake キャッシュ変数で接続先をカスタマイズできます:
+
+| 変数 | デフォルト | 説明 |
+|------|-----------|------|
+| `K230_IP` | (空 = 自動検出) | littlecore の IP アドレス |
+| `K230_USER` | `root` | SSH ユーザー |
+| `K230_SERIAL` | `/dev/ttyACM1` | bigcore シリアルポート (run 用) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | littlecore シリアル (IP 自動検出用) |
+| `K230_BAUD` | `115200` | ボーレート |

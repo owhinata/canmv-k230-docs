@@ -73,16 +73,16 @@ RT-Smart kernel binary
 
 ### Method 1: Using the Build Script (Default)
 
-`scripts/build_sdk.sh` generates an image that does not launch `fastboot_app.elf` and instead waits at the msh shell prompt by default.
+`./build_sdk.sh` generates an image that does not launch `fastboot_app.elf` and instead waits at the msh shell prompt by default.
 
 ```bash
-scripts/build_sdk.sh
+./build_sdk.sh
 ```
 
 To generate an image that launches `fastboot_app.elf`, pass `--with-fastboot`.
 
 ```bash
-scripts/build_sdk.sh --with-fastboot
+./build_sdk.sh --with-fastboot
 ```
 
 ### Method 2: Manually Editing init.sh

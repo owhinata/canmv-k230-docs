@@ -209,30 +209,98 @@ The `apps/sample_face_ae/CMakeLists.txt` handles:
 
 ## Transferring and Running on K230
 
-### Transfer via SCP
+The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
 ```bash
-scp build/sample_face_ae/sample_face_ae root@<K230_IP_ADDRESS>:/sharefs/sample_face_ae
-scp mobile_retinaface.kmodel root@<K230_IP_ADDRESS>:/sharefs/
+cmake --build build/sample_face_ae --target deploy   # build + SCP transfer
+cmake --build build/sample_face_ae --target run      # run via serial (Ctrl+C to disconnect)
 ```
 
-### Run on the K230 bigcore (msh)
+### Manual Transfer and Execution
 
-On the K230 serial console (ACM1), run:
+??? note "Manual operation via SCP + minicom"
+    #### Transfer via SCP
 
-```
-msh /> /sharefs/sample_face_ae /sharefs/mobile_retinaface.kmodel 1
-```
+    ```bash
+    scp build/sample_face_ae/sample_face_ae root@<K230_IP_ADDRESS>:/sharefs/sample_face_ae/
+    scp mobile_retinaface.kmodel root@<K230_IP_ADDRESS>:/sharefs/sample_face_ae/
+    ```
 
-To run with AE ROI disabled:
+    #### Run on the K230 bigcore (msh)
 
-```
-msh /> /sharefs/sample_face_ae /sharefs/mobile_retinaface.kmodel 0
-```
+    On the K230 serial console (ACM1), run:
 
-!!! tip "Serial connection"
+    ```
+    msh /> /sharefs/sample_face_ae/sample_face_ae /sharefs/sample_face_ae/mobile_retinaface.kmodel 1
+    ```
+
+    To run with AE ROI disabled:
+
+    ```
+    msh /> /sharefs/sample_face_ae/sample_face_ae /sharefs/sample_face_ae/mobile_retinaface.kmodel 0
+    ```
+
+    #### Serial Connection
+
     - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
     ```bash
     minicom -D /dev/ttyACM1 -b 115200
     ```
+
+---
+
+## CMake Targets { #cmake-targets }
+
+### Configuration
+
+```bash
+cmake -B build/sample_face_ae -S apps/sample_face_ae \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### Target List
+
+| Target | Command | Description |
+|--------|---------|-------------|
+| (default) | `cmake --build build/sample_face_ae` | Build C++ binary |
+| `deploy` | `cmake --build build/sample_face_ae --target deploy` | Build + SCP transfer to K230 |
+| `run` | `cmake --build build/sample_face_ae --target run` | Run on K230 via serial (Ctrl+C to disconnect) |
+
+### deploy
+
+Builds the binary and transfers it to K230 via SCP:
+
+```bash
+cmake --build build/sample_face_ae --target deploy
+```
+
+Files transferred:
+
+| Local | Path on K230 |
+|-------|-------------|
+| `build/sample_face_ae/sample_face_ae` | `/sharefs/sample_face_ae/sample_face_ae` |
+| `apps/face_detect/scripts/output/dump/mobile_retinaface.kmodel` | `/sharefs/sample_face_ae/mobile_retinaface.kmodel` |
+
+### run
+
+Sends a command to K230 bigcore (msh) via serial port and displays output in real time:
+
+```bash
+cmake --build build/sample_face_ae --target run
+```
+
+- Keyboard input is forwarded to K230 (`q` + Enter to quit the app)
+- **Ctrl+C** to disconnect from serial
+
+### K230 Connection Settings
+
+Customize connection parameters via CMake cache variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `K230_IP` | (empty = auto-detect) | Littlecore IP address |
+| `K230_USER` | `root` | SSH user |
+| `K230_SERIAL` | `/dev/ttyACM1` | Bigcore serial port (for run) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | Littlecore serial (for IP auto-detect) |
+| `K230_BAUD` | `115200` | Baud rate |

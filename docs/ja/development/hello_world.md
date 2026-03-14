@@ -246,30 +246,39 @@ endif()
 
 === "bigcore (RT-Smart)"
 
-    ### SCP で転送する
-
-    K230 がネットワークに接続されている場合は `scp` で `/sharefs/` に転送します。
+    CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
     ```bash
-    scp build/hello_world/hello_world root@<K230のIPアドレス>:/sharefs/hello_world
+    cmake --build build/hello_world --target deploy   # ビルド + SCP 転送
+    cmake --build build/hello_world --target run      # シリアル経由で実行 (Ctrl+C で終了)
     ```
 
-    !!! warning "/sharefs/ について"
-        転送先は `/sharefs/hello_world` です（`/root/sharefs/` ではありません）。
-        `/sharefs/` は bigコアから直接アクセスできる vfat パーティション（`/dev/mmcblk1p4`）で、
-        K230 の Linux 側からも同じパスでアクセスできます。
-        `/root/sharefs/` は別ディレクトリであり、bigコアからはアクセスできません。
+    ??? note "SCP + minicom による手動操作"
+        ### SCP で転送する
 
-    ### K230 bigコア（msh）で実行
+        K230 がネットワークに接続されている場合は `scp` で `/sharefs/` に転送します。
 
-    K230 シリアルコンソール（ACM1）から bigコアの msh プロンプトで実行します:
+        ```bash
+        scp build/hello_world/hello_world root@<K230のIPアドレス>:/sharefs/hello_world
+        ```
 
-    ```
-    msh /> /sharefs/hello_world
-    Hello, K230 bigcore!
-    ```
+        !!! warning "/sharefs/ について"
+            転送先は `/sharefs/hello_world` です（`/root/sharefs/` ではありません）。
+            `/sharefs/` は bigコアから直接アクセスできる vfat パーティション（`/dev/mmcblk1p4`）で、
+            K230 の Linux 側からも同じパスでアクセスできます。
+            `/root/sharefs/` は別ディレクトリであり、bigコアからはアクセスできません。
 
-    !!! tip "シリアル接続"
+        ### K230 bigコア（msh）で実行
+
+        K230 シリアルコンソール（ACM1）から bigコアの msh プロンプトで実行します:
+
+        ```
+        msh /> /sharefs/hello_world
+        Hello, K230 bigcore!
+        ```
+
+        ### シリアル接続
+
         - **小コア (Linux)**: `/dev/ttyACM0`（115200 bps）
         - **bigコア (RT-Smart msh)**: `/dev/ttyACM1`（115200 bps）
 
@@ -279,27 +288,86 @@ endif()
 
 === "littlecore (Linux)"
 
-    ### SCP で転送する
-
-    K230 がネットワークに接続されている場合は `scp` で `/root/` に転送します。
+    CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
     ```bash
-    scp build/hello_world_linux/hello_world root@<K230のIPアドレス>:/root/hello_world
+    cmake --build build/hello_world_linux --target deploy   # ビルド + SCP 転送
+    cmake --build build/hello_world_linux --target run      # シリアル経由で実行 (Ctrl+C で終了)
     ```
 
-    ### K230 littleコア（Linux シェル）で実行
+    ??? note "SCP + minicom による手動操作"
+        ### SCP で転送する
 
-    K230 シリアルコンソール（ACM0）から Linux シェルで実行します:
+        K230 がネットワークに接続されている場合は `scp` で `/root/` に転送します。
 
-    ```
-    [root@canmv ~]# /root/hello_world
-    Hello, K230 littlecore!
-    ```
+        ```bash
+        scp build/hello_world_linux/hello_world root@<K230のIPアドレス>:/root/hello_world
+        ```
 
-    !!! tip "シリアル接続"
+        ### K230 littleコア（Linux シェル）で実行
+
+        K230 シリアルコンソール（ACM0）から Linux シェルで実行します:
+
+        ```
+        [root@canmv ~]# /root/hello_world
+        Hello, K230 littlecore!
+        ```
+
+        ### シリアル接続
+
         - **小コア (Linux)**: `/dev/ttyACM0`（115200 bps）
         - **bigコア (RT-Smart msh)**: `/dev/ttyACM1`（115200 bps）
 
         ```bash
         minicom -D /dev/ttyACM0 -b 115200
         ```
+
+---
+
+## CMake ターゲット { #cmake-targets }
+
+=== "bigcore (RT-Smart)"
+
+    ### 設定
+
+    ```bash
+    cmake -B build/hello_world -S apps/hello_world \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+    ```
+
+    ### ターゲット一覧
+
+    | ターゲット | コマンド | 説明 |
+    |-----------|---------|------|
+    | (デフォルト) | `cmake --build build/hello_world` | C バイナリのビルド |
+    | `deploy` | `cmake --build build/hello_world --target deploy` | ビルド + K230 `/sharefs/` への SCP 転送 |
+    | `run` | `cmake --build build/hello_world --target run` | bigcore シリアル経由で実行 (Ctrl+C で終了) |
+
+=== "littlecore (Linux)"
+
+    ### 設定
+
+    ```bash
+    cmake -B build/hello_world_linux -S apps/hello_world \
+      -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-linux.cmake"
+    ```
+
+    ### ターゲット一覧
+
+    | ターゲット | コマンド | 説明 |
+    |-----------|---------|------|
+    | (デフォルト) | `cmake --build build/hello_world_linux` | C バイナリのビルド |
+    | `deploy` | `cmake --build build/hello_world_linux --target deploy` | ビルド + K230 `/root/` への SCP 転送 |
+    | `run` | `cmake --build build/hello_world_linux --target run` | littlecore シリアル経由で実行 (Ctrl+C で終了) |
+
+### K230 接続設定
+
+CMake キャッシュ変数で接続先をカスタマイズできます:
+
+| 変数 | デフォルト | 説明 |
+|------|-----------|------|
+| `K230_IP` | (空 = 自動検出) | littlecore の IP アドレス |
+| `K230_USER` | `root` | SSH ユーザー |
+| `K230_SERIAL` | bigcore: `/dev/ttyACM1`、littlecore: `/dev/ttyACM0` | シリアルポート (run 用) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | littlecore シリアル (IP 自動検出用) |
+| `K230_BAUD` | `115200` | ボーレート |

@@ -449,23 +449,93 @@ While running, the application accepts keyboard commands:
 
 ## Transferring and Running on K230
 
-### Transfer via SCP
+The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
 ```bash
-scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
+cmake --build build/sample_vicap --target deploy   # build + SCP transfer
+cmake --build build/sample_vicap --target run      # run via serial (Ctrl+C to disconnect)
 ```
 
-### Run on the K230 bigcore (msh)
+### Manual Transfer and Execution
 
-On the K230 serial console (ACM1), run:
+??? note "Manual operation via SCP + minicom"
+    #### Transfer via SCP
 
-```
-msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
-```
+    ```bash
+    scp build/sample_vicap/sample_vicap root@<K230_IP_ADDRESS>:/sharefs/sample_vicap
+    ```
 
-!!! tip "Serial connection"
+    #### Run on the K230 bigcore (msh)
+
+    On the K230 serial console (ACM1), run:
+
+    ```
+    msh /> /sharefs/sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2
+    ```
+
+    #### Serial Connection
+
     - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
 
     ```bash
     minicom -D /dev/ttyACM1 -b 115200
     ```
+
+---
+
+## CMake Targets { #cmake-targets }
+
+### Configuration
+
+```bash
+cmake -B build/sample_vicap -S apps/sample_vicap \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### Target List
+
+| Target | Command | Description |
+|--------|---------|-------------|
+| (default) | `cmake --build build/sample_vicap` | Build C binary |
+| `deploy` | `cmake --build build/sample_vicap --target deploy` | Build + SCP transfer to K230 |
+| `run` | `cmake --build build/sample_vicap --target run` | Run on K230 via serial (Ctrl+C to disconnect) |
+
+### deploy
+
+Builds the binary and transfers it to K230 via SCP:
+
+```bash
+cmake --build build/sample_vicap --target deploy
+```
+
+Files transferred:
+
+| Local | Path on K230 |
+|-------|-------------|
+| `build/sample_vicap/sample_vicap` | `/sharefs/sample_vicap` |
+
+### run
+
+Sends a command to K230 bigcore (msh) via serial port and displays output in real time:
+
+```bash
+cmake --build build/sample_vicap --target run
+```
+
+- Keyboard input is forwarded to K230 (`q` + Enter to quit the app)
+- **Ctrl+C** to disconnect from serial
+
+!!! note "Default run command"
+    The `run` target executes `sample_vicap -mode 0 -conn 1 -dev 0 -sensor 24 -chn 0 -mirror 2`. To run with different sensor settings, connect manually via serial.
+
+### K230 Connection Settings
+
+Customize connection parameters via CMake cache variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `K230_IP` | (empty = auto-detect) | Littlecore IP address |
+| `K230_USER` | `root` | SSH user |
+| `K230_SERIAL` | `/dev/ttyACM1` | Bigcore serial port (for run) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | Littlecore serial (for IP auto-detect) |
+| `K230_BAUD` | `115200` | Baud rate |

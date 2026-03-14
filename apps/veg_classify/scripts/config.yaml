@@ -1,0 +1,20 @@
+dataset:
+  root_folder: ../data
+  split: true
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+train:
+  device: cpu
+  image_size: [224, 224]
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  epochs: 10
+  batch_size: 8
+  learning_rate: 0.001
+  save_path: ../output
+
+deploy:
+  target: k230
+  ptq_option: 0

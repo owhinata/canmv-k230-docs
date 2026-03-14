@@ -63,6 +63,7 @@ nav:
       - development/sample_face_ae.md
   - AI開発:
       - ai/face_detect.md
+      - ai/veg_classify.md
   - 技術情報:
       - technical/usb_cdc_ether.md
       - technical/bigcore_rtsmart_mpp.md

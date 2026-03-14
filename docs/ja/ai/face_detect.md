@@ -314,26 +314,44 @@ face_detect: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, versi
 
 ### K230 への転送・実行
 
-#### SCP で転送
+CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
 ```bash
-scp build/face_detect/face_detect root@<K230_IP_ADDRESS>:/sharefs/face_detect
-scp apps/face_detect/scripts/output/dump/mobile_retinaface.kmodel root@<K230_IP_ADDRESS>:/sharefs/
+cmake --build build/face_detect --target deploy   # ビルド + kmodel + SCP 転送
+cmake --build build/face_detect --target run      # シリアル経由で実行 (Ctrl+C で終了)
 ```
 
-#### K230 bigcore (msh) で実行
+#### 手動で転送・実行する場合
 
-K230 のシリアルコンソール (ACM1) で実行します:
+??? note "SCP + minicom による手動操作"
+    ##### SCP で転送
 
-```
-msh /> /sharefs/face_detect /sharefs/mobile_retinaface.kmodel 1
-```
+    ```bash
+    scp build/face_detect/face_detect root@<K230_IP_ADDRESS>:/sharefs/face_detect/
+    scp apps/face_detect/scripts/output/dump/mobile_retinaface.kmodel root@<K230_IP_ADDRESS>:/sharefs/face_detect/
+    ```
 
-AE ROI を無効にして実行する場合:
+    ##### K230 bigcore (msh) で実行
 
-```
-msh /> /sharefs/face_detect /sharefs/mobile_retinaface.kmodel 0
-```
+    K230 のシリアルコンソール (ACM1) で実行します:
+
+    ```
+    msh /> /sharefs/face_detect/face_detect /sharefs/face_detect/mobile_retinaface.kmodel 1
+    ```
+
+    AE ROI を無効にして実行する場合:
+
+    ```
+    msh /> /sharefs/face_detect/face_detect /sharefs/face_detect/mobile_retinaface.kmodel 0
+    ```
+
+    ##### シリアル接続
+
+    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1`、115200 bps
+
+    ```bash
+    minicom -D /dev/ttyACM1 -b 115200
+    ```
 
 #### キャプチャモードで実行
 
@@ -341,7 +359,7 @@ msh /> /sharefs/face_detect /sharefs/mobile_retinaface.kmodel 0
 
 ```
 msh /> mkdir /sharefs/calib
-msh /> /sharefs/face_detect /sharefs/mobile_retinaface.kmodel 1 /sharefs/calib
+msh /> /sharefs/face_detect/face_detect /sharefs/face_detect/mobile_retinaface.kmodel 1 /sharefs/calib
 ```
 
 !!! tip "キャリブレーション用キャプチャ"
@@ -356,9 +374,68 @@ msh /> /sharefs/face_detect /sharefs/mobile_retinaface.kmodel 1 /sharefs/calib
     python apps/face_detect/scripts/step3_compile_kmodel.py --calib-dir ./calib/
     ```
 
-!!! tip "シリアル接続"
-    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1`、115200 bps
+---
 
-    ```bash
-    minicom -D /dev/ttyACM1 -b 115200
-    ```
+## CMake ターゲット { #cmake-targets }
+
+### 設定
+
+```bash
+cmake -B build/face_detect -S apps/face_detect \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### ターゲット一覧
+
+| ターゲット | コマンド | 説明 |
+|-----------|---------|------|
+| (デフォルト) | `cmake --build build/face_detect` | C++ バイナリのビルド |
+| `kmodel` | `cmake --build build/face_detect --target kmodel` | kmodel コンパイル (step2 + step3) |
+| `deploy` | `cmake --build build/face_detect --target deploy` | ビルド + kmodel + K230 への SCP 転送 |
+| `run` | `cmake --build build/face_detect --target run` | シリアル経由で K230 実行 (Ctrl+C で終了) |
+
+### kmodel
+
+ONNX モデルの簡略化と kmodel コンパイルを自動で行います:
+
+```bash
+cmake --build build/face_detect --target kmodel
+```
+
+### deploy
+
+バイナリのビルド、kmodel コンパイル、K230 への SCP 転送を一括実行します:
+
+```bash
+cmake --build build/face_detect --target deploy
+```
+
+転送されるファイル:
+
+| ローカル | K230 上のパス |
+|---------|-------------|
+| `build/face_detect/face_detect` | `/sharefs/face_detect/face_detect` |
+| `apps/face_detect/scripts/output/dump/mobile_retinaface.kmodel` | `/sharefs/face_detect/mobile_retinaface.kmodel` |
+
+### run
+
+シリアルポート経由で K230 bigcore (msh) にコマンドを送信し、出力をリアルタイム表示します:
+
+```bash
+cmake --build build/face_detect --target run
+```
+
+- キーボード入力はそのまま K230 に転送されます（`q` + Enter でアプリ終了）
+- **Ctrl+C** でシリアル接続を切断
+
+### K230 接続設定
+
+CMake キャッシュ変数で接続先をカスタマイズできます:
+
+| 変数 | デフォルト | 説明 |
+|------|-----------|------|
+| `K230_IP` | (空 = 自動検出) | littlecore の IP アドレス |
+| `K230_USER` | `root` | SSH ユーザー |
+| `K230_SERIAL` | `/dev/ttyACM1` | bigcore シリアルポート (run 用) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | littlecore シリアル (IP 自動検出用) |
+| `K230_BAUD` | `115200` | ボーレート |

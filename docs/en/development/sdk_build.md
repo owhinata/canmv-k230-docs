@@ -64,5 +64,5 @@ The `toolchain/` directory contains the cross-compiler, used for application dev
 | `toolchain/` | RISC-V cross-compiler |
 
 !!! tip "Build script"
-    A build script automating the steps above is also available:
+    A build script (`./build_sdk.sh`) automating the steps above is also available:
     [owhinata/canmv-k230](https://github.com/owhinata/canmv-k230)

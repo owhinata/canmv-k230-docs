@@ -10,3 +10,8 @@ onnxsim
 onnxruntime
 Pillow
 scikit-learn
+
+# PyTorch (CPU) — model training for veg_classify
+torch>=2.0
+torchvision>=0.15
+onnxscript

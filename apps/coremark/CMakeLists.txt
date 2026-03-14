@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(coremark C)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/k230-deploy.cmake)
+
 # --- Fetch upstream CoreMark source ---
 include(FetchContent)
 FetchContent_Declare(
@@ -42,4 +44,20 @@ target_compile_definitions(coremark PRIVATE "FLAGS_STR=\"-O2\"")
 # RT-Smart SDK includes (set by bigcore toolchain, absent for littlecore)
 if(RTT_INCLUDE)
     target_include_directories(coremark PRIVATE ${RTT_INCLUDE})
+endif()
+
+if(K230_CORE STREQUAL "big")
+    k230_add_deploy_target(
+        DEPLOY_DIR /sharefs
+        DEPENDS coremark
+        FILES $<TARGET_FILE:coremark>:coremark
+    )
+    k230_add_run_target(COMMAND "/sharefs/coremark")
+elseif(K230_CORE STREQUAL "little")
+    k230_add_deploy_target(
+        DEPLOY_DIR /root
+        DEPENDS coremark
+        FILES $<TARGET_FILE:coremark>:coremark
+    )
+    k230_add_run_target(COMMAND "/root/coremark")
 endif()

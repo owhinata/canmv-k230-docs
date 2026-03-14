@@ -30,14 +30,14 @@ Linux (littlecore)                    RT-Smart (bigcore)
 
 ### Enabling
 
-`scripts/build_sdk.sh` enables `RT_USING_RTT_CTRL` by default.
+`./build_sdk.sh` enables `RT_USING_RTT_CTRL` by default.
 
 ```bash
 # Default (rtt-ctrl enabled)
-scripts/build_sdk.sh
+./build_sdk.sh
 
 # To disable rtt-ctrl
-scripts/build_sdk.sh --no-rtt-ctrl
+./build_sdk.sh --no-rtt-ctrl
 ```
 
 Internally, this adds `#define RT_USING_RTT_CTRL` to the defconfig source (`configs/common_rttlinux.config`).
@@ -139,6 +139,6 @@ sudo dd if=output/k230_canmv_defconfig/images/big-core/rtt_system.bin \
 
 | File | Role |
 |------|------|
-| `scripts/build_sdk.sh` | `RT_USING_RTT_CTRL` enablement logic |
+| `./build_sdk.sh` | `RT_USING_RTT_CTRL` enablement logic |
 | `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/configs/common_rttlinux.config` | Defconfig source (copied to `rtconfig.h` during build) |
 | `k230_sdk/src/big/rt-smart/kernel/bsp/maix3/rtconfig.h` | RT-Smart kernel configuration (auto-generated) |
