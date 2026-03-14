@@ -92,10 +92,40 @@ To use a custom dataset, organize it in the same folder structure (category-name
 
 ### Running Training
 
+#### Direct Execution
+
 ```bash
 cd apps/veg_classify/scripts
 python train.py
 ```
+
+#### CMake train Target
+
+The CMake `train` target automates venv creation, dependency installation, and dataset change detection:
+
+```bash
+cmake -B build/veg_classify -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+cmake --build build/veg_classify --target train
+```
+
+The `train` target:
+
+1. Creates `.venv` if it doesn't exist and installs dependencies from `requirements.txt`
+2. Hashes the dataset file structure and compares with the previous run
+3. Skips training if unchanged (`Dataset unchanged. Skipping training.`)
+4. Runs `train.py` if the dataset has changed
+
+To use an external dataset, specify the `DATA_DIR` option:
+
+```bash
+cmake -B build/veg_classify -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
+  -DDATA_DIR=/path/to/custom/dataset
+```
+
+!!! tip "How change detection works"
+    `check_data_hash.sh` computes an MD5 hash from the paths and sizes of all files in the dataset directory. It does not read file contents, so it runs fast even with large datasets. It detects file additions, deletions, and size changes.
 
 `train.py` runs the following steps end-to-end:
 
@@ -104,7 +134,7 @@ python train.py
 3. ONNX export
 4. kmodel conversion (if nncase is installed)
 
-Output files (`apps/veg_classify/output/`):
+Output files (`build/veg_classify/output/`):
 
 | File | Description |
 |------|-------------|

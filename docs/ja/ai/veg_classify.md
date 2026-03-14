@@ -92,10 +92,40 @@ data/
 
 ### 学習の実行
 
+#### 直接実行
+
 ```bash
 cd apps/veg_classify/scripts
 python train.py
 ```
+
+#### CMake train ターゲット
+
+CMake の `train` ターゲットを使うと、venv 作成・依存パッケージインストール・データ変更検知を自動で行います:
+
+```bash
+cmake -B build/veg_classify -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+cmake --build build/veg_classify --target train
+```
+
+`train` ターゲットの動作:
+
+1. `.venv` が無ければ作成し、`requirements.txt` の依存パッケージをインストール
+2. データセットのファイル構成をハッシュ化し、前回と比較
+3. 変更がなければ学習をスキップ（`Dataset unchanged. Skipping training.`）
+4. 変更があれば `train.py` を実行
+
+外部データセットを使う場合は `DATA_DIR` オプションで指定できます:
+
+```bash
+cmake -B build/veg_classify -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
+  -DDATA_DIR=/path/to/custom/dataset
+```
+
+!!! tip "変更検知の仕組み"
+    `check_data_hash.sh` がデータディレクトリ内の全ファイルのパスとサイズから MD5 ハッシュを計算します。ファイル内容は読まないため、大量データでも高速に動作します。ファイルの追加・削除・サイズ変更を検知できます。
 
 `train.py` は以下を一貫して実行します:
 
@@ -104,7 +134,7 @@ python train.py
 3. ONNX エクスポート
 4. kmodel 変換 (nncase がインストール済みの場合)
 
-出力ファイル (`apps/veg_classify/output/`):
+出力ファイル (`build/veg_classify/output/`):
 
 | ファイル | 説明 |
 |---------|------|

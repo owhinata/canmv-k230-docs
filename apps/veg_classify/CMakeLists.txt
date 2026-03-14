@@ -2,16 +2,27 @@ cmake_minimum_required(VERSION 3.16)
 project(veg_classify CXX)
 
 # Python training target (not built by default)
-find_package(Python3 COMPONENTS Interpreter QUIET)
-if(Python3_FOUND)
-    add_custom_target(train
-        COMMAND ${Python3_EXECUTABLE} train.py
-                --output-dir ${CMAKE_CURRENT_BINARY_DIR}/output
-                --data-dir ${CMAKE_CURRENT_SOURCE_DIR}/data
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-        USES_TERMINAL
-    )
-endif()
+# - Creates .venv and installs dependencies if needed
+# - Skips training if dataset unchanged (hash-based detection)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(_VENV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../.venv)
+set(_VENV_PYTHON ${_VENV_DIR}/bin/python)
+set(_REQUIREMENTS ${CMAKE_CURRENT_SOURCE_DIR}/../../requirements.txt)
+set(_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/output)
+
+# Dataset directory (cmake -DDATA_DIR=/path/to/data to override)
+set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data" CACHE PATH "Dataset directory for training")
+
+add_custom_target(train
+    COMMAND ${Python3_EXECUTABLE} -m venv ${_VENV_DIR}
+    COMMAND ${_VENV_PYTHON} -m pip install -r ${_REQUIREMENTS} --quiet
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_data_hash.sh
+            ${DATA_DIR} ${_OUTPUT_DIR}
+            ${_VENV_PYTHON} train.py ${_OUTPUT_DIR} ${DATA_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+    USES_TERMINAL
+    COMMENT "Training model (skipped if dataset unchanged)"
+)
 
 add_executable(veg_classify
     src/main.cc
