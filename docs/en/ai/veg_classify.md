@@ -99,33 +99,11 @@ cd apps/veg_classify/scripts
 python train.py
 ```
 
-#### CMake train Target
-
-The CMake `train` target automates venv creation, dependency installation, and dataset change detection:
+The CMake `train` target automates venv creation, dependency installation, and dataset change detection (see [CMake Targets](#cmake-targets) for details):
 
 ```bash
-cmake -B build/veg_classify -S apps/veg_classify \
-  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
-cmake --build build/veg_classify --target train
+cmake --build build --target train
 ```
-
-The `train` target:
-
-1. Creates `.venv` if it doesn't exist and installs dependencies from `requirements.txt`
-2. Hashes the dataset file structure and compares with the previous run
-3. Skips training if unchanged (`Dataset unchanged. Skipping training.`)
-4. Runs `train.py` if the dataset has changed
-
-To use an external dataset, specify the `DATA_DIR` option:
-
-```bash
-cmake -B build/veg_classify -S apps/veg_classify \
-  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
-  -DDATA_DIR=/path/to/custom/dataset
-```
-
-!!! tip "How change detection works"
-    `check_data_hash.sh` computes an MD5 hash from the paths and sizes of all files in the dataset directory. It does not read file contents, so it runs fast even with large datasets. It detects file additions, deletions, and size changes.
 
 `train.py` runs the following steps end-to-end:
 
@@ -353,39 +331,154 @@ veg_classify: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 
 ### Transferring and Running on K230
 
-#### Transfer via SCP
+The CMake `deploy` / `run` targets handle transfer and execution in one command (see [CMake Targets](#cmake-targets) for details):
 
 ```bash
-scp build/veg_classify/veg_classify root@<K230_IP_ADDRESS>:/sharefs/
-scp apps/veg_classify/output/best.kmodel root@<K230_IP_ADDRESS>:/sharefs/veg_classify.kmodel
-scp apps/veg_classify/output/labels.txt root@<K230_IP_ADDRESS>:/sharefs/
+cmake --build build --target deploy   # build + train + SCP transfer
+cmake --build build --target run      # run via serial (Ctrl+C to disconnect)
 ```
 
-#### Run on the K230 bigcore (msh)
+#### Manual Transfer and Execution
 
-```
-msh /> /sharefs/veg_classify /sharefs/veg_classify.kmodel /sharefs/labels.txt
-```
+??? note "Manual operation via SCP + minicom"
+    ##### Transfer via SCP
 
-#### Run in Capture Mode
+    ```bash
+    scp build/veg_classify root@<K230_IP>:/sharefs/veg_classify/
+    scp build/output/best.kmodel root@<K230_IP>:/sharefs/veg_classify/veg_classify.kmodel
+    scp build/output/labels.txt root@<K230_IP>:/sharefs/veg_classify/
+    ```
 
-```
-msh /> mkdir /sharefs/calib
-msh /> /sharefs/veg_classify /sharefs/veg_classify.kmodel /sharefs/labels.txt /sharefs/calib
-```
+    ##### Run on the K230 bigcore (msh)
+
+    ```
+    msh /> /sharefs/veg_classify/veg_classify /sharefs/veg_classify/veg_classify.kmodel /sharefs/veg_classify/labels.txt
+    ```
+
+    ##### Run in Capture Mode
+
+    ```
+    msh /> mkdir /sharefs/calib
+    msh /> /sharefs/veg_classify/veg_classify /sharefs/veg_classify/veg_classify.kmodel /sharefs/veg_classify/labels.txt /sharefs/calib
+    ```
+
+    ##### Serial Connection
+
+    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
+
+    ```bash
+    minicom -D /dev/ttyACM1 -b 115200
+    ```
 
 !!! tip "Calibration capture"
     Run with `capture_dir` specified and press 'c' + Enter several times to capture images from the real environment.
     Transfer the captured images to your PC and use them as calibration data for `step3 --calib-dir`.
 
     ```bash
-    scp root@<K230_IP_ADDRESS>:/sharefs/calib/*.png ./calib/
+    scp root@<K230_IP>:/sharefs/calib/*.png ./calib/
     python apps/veg_classify/scripts/step3_compile_kmodel.py --calib-dir ./calib/
     ```
 
-!!! tip "Serial connection"
-    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1` at 115200 bps
+---
 
-    ```bash
-    minicom -D /dev/ttyACM1 -b 115200
-    ```
+## CMake Targets { #cmake-targets }
+
+### Configuration
+
+```bash
+cmake -B build -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### Target List
+
+| Target | Command | Description |
+|--------|---------|-------------|
+| (default) | `cmake --build build` | Build C++ binary |
+| `train` | `cmake --build build --target train` | Train model (skipped if data unchanged) |
+| `deploy` | `cmake --build build --target deploy` | Build + train + SCP transfer to K230 |
+| `run` | `cmake --build build --target run` | Run on K230 via serial (Ctrl+C to disconnect) |
+
+### train
+
+Automates venv creation, dependency installation, dataset change detection, and training:
+
+```bash
+cmake --build build --target train
+```
+
+How it works:
+
+1. Creates `.venv` if it doesn't exist and installs dependencies from `requirements.txt`
+2. Hashes the dataset file structure and compares with the previous run
+3. Skips training if unchanged (`Dataset unchanged. Skipping training.`)
+4. Runs `train.py` if the dataset has changed
+
+To use an external dataset, specify the `DATA_DIR` option:
+
+```bash
+cmake -B build -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
+  -DDATA_DIR=/path/to/custom/dataset
+```
+
+!!! tip "How change detection works"
+    `check_data_hash.sh` computes an MD5 hash from the paths and sizes of all files in the dataset directory. It does not read file contents, so it runs fast even with large datasets. It detects file additions, deletions, and size changes.
+
+### deploy
+
+Builds the binary, trains the model, and transfers everything to K230 via SCP:
+
+```bash
+cmake --build build --target deploy
+```
+
+Files transferred:
+
+| Local | Path on K230 |
+|-------|-------------|
+| `build/veg_classify` | `/sharefs/veg_classify/veg_classify` |
+| `build/output/best.kmodel` | `/sharefs/veg_classify/veg_classify.kmodel` |
+| `build/output/labels.txt` | `/sharefs/veg_classify/labels.txt` |
+
+The K230 IP address is auto-detected via the littlecore serial port (`/dev/ttyACM0`). You can also set it manually:
+
+```bash
+cmake build -DK230_IP=192.168.1.100
+cmake --build build --target deploy
+```
+
+!!! warning "If auto-detection fails"
+    Auto-detection does not work while picocom or another program is connected to the littlecore serial port. Close it first, or set `K230_IP` manually.
+
+### run
+
+Sends a command to K230 bigcore (msh) via serial port and displays output in real time:
+
+```bash
+cmake --build build --target run
+```
+
+- Keyboard input is forwarded to K230 (`q` + Enter to quit the app)
+- **Ctrl+C** to disconnect from serial
+- picocom/minicom can connect normally after `run` exits
+
+!!! warning "Port busy error"
+    If minicom/picocom is using `/dev/ttyACM1`, you'll get an error. Close it before running.
+
+### K230 Connection Settings
+
+Customize connection parameters via CMake cache variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `K230_IP` | (empty = auto-detect) | Littlecore IP address |
+| `K230_USER` | `root` | SSH user |
+| `K230_DEPLOY_DIR` | `/sharefs/veg_classify` | Deploy directory on K230 |
+| `K230_SERIAL` | `/dev/ttyACM1` | Bigcore serial port (for run) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | Littlecore serial (for IP auto-detect) |
+| `K230_BAUD` | `115200` | Baud rate |
+
+```bash
+cmake build -DK230_IP=192.168.1.100 -DK230_DEPLOY_DIR=/sharefs/myapp
+```

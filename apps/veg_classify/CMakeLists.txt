@@ -13,15 +13,51 @@ set(_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/output)
 # Dataset directory (cmake -DDATA_DIR=/path/to/data to override)
 set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data" CACHE PATH "Dataset directory for training")
 
+set(_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/scripts)
+
 add_custom_target(train
     COMMAND ${Python3_EXECUTABLE} -m venv ${_VENV_DIR}
     COMMAND ${_VENV_PYTHON} -m pip install -r ${_REQUIREMENTS} --quiet
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_data_hash.sh
+    COMMAND ${_CMAKE_SCRIPTS_DIR}/check_data_hash.sh
             ${DATA_DIR} ${_OUTPUT_DIR}
-            ${_VENV_PYTHON} train.py ${_OUTPUT_DIR} ${DATA_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+            ${_VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/train.py ${_OUTPUT_DIR} ${DATA_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     USES_TERMINAL
     COMMENT "Training model (skipped if dataset unchanged)"
+)
+
+# --- K230 device settings ---
+set(K230_IP "" CACHE STRING "K230 IP address (empty = auto-detect via serial)")
+set(K230_USER "root" CACHE STRING "SSH user for K230")
+set(K230_DEPLOY_DIR "/sharefs/veg_classify" CACHE STRING "Deploy directory on K230")
+set(K230_SERIAL "/dev/ttyACM1" CACHE STRING "Serial port for K230 bigcore")
+set(K230_SERIAL_LC "/dev/ttyACM0" CACHE STRING "Serial port for K230 littlecore (IP auto-detect)")
+set(K230_BAUD "115200" CACHE STRING "Serial baud rate")
+
+add_custom_target(deploy
+    COMMAND ${CMAKE_COMMAND} -E env
+            "K230_USER=${K230_USER}"
+            "K230_IP=${K230_IP}"
+            "K230_SERIAL_LC=${K230_SERIAL_LC}"
+            "K230_BAUD=${K230_BAUD}"
+            "K230_DEPLOY_DIR=${K230_DEPLOY_DIR}"
+            ${_CMAKE_SCRIPTS_DIR}/deploy.sh
+            $<TARGET_FILE:veg_classify>:veg_classify
+            ${_OUTPUT_DIR}/best.kmodel:veg_classify.kmodel
+            ${_OUTPUT_DIR}/labels.txt:labels.txt
+    DEPENDS veg_classify train
+    USES_TERMINAL
+    COMMENT "Deploying to K230"
+)
+
+add_custom_target(run
+    COMMAND ${CMAKE_COMMAND} -E env
+            "K230_SERIAL=${K230_SERIAL}"
+            "K230_BAUD=${K230_BAUD}"
+            ${_CMAKE_SCRIPTS_DIR}/run.sh
+            "${K230_DEPLOY_DIR}/veg_classify ${K230_DEPLOY_DIR}/veg_classify.kmodel ${K230_DEPLOY_DIR}/labels.txt"
+    USES_TERMINAL
+    COMMENT "Running on K230 bigcore via ${K230_SERIAL}"
 )
 
 add_executable(veg_classify

@@ -99,33 +99,11 @@ cd apps/veg_classify/scripts
 python train.py
 ```
 
-#### CMake train ターゲット
-
-CMake の `train` ターゲットを使うと、venv 作成・依存パッケージインストール・データ変更検知を自動で行います:
+CMake の `train` ターゲットを使うと、venv 作成・依存パッケージインストール・データ変更検知を自動で行います（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
 ```bash
-cmake -B build/veg_classify -S apps/veg_classify \
-  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
-cmake --build build/veg_classify --target train
+cmake --build build --target train
 ```
-
-`train` ターゲットの動作:
-
-1. `.venv` が無ければ作成し、`requirements.txt` の依存パッケージをインストール
-2. データセットのファイル構成をハッシュ化し、前回と比較
-3. 変更がなければ学習をスキップ（`Dataset unchanged. Skipping training.`）
-4. 変更があれば `train.py` を実行
-
-外部データセットを使う場合は `DATA_DIR` オプションで指定できます:
-
-```bash
-cmake -B build/veg_classify -S apps/veg_classify \
-  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
-  -DDATA_DIR=/path/to/custom/dataset
-```
-
-!!! tip "変更検知の仕組み"
-    `check_data_hash.sh` がデータディレクトリ内の全ファイルのパスとサイズから MD5 ハッシュを計算します。ファイル内容は読まないため、大量データでも高速に動作します。ファイルの追加・削除・サイズ変更を検知できます。
 
 `train.py` は以下を一貫して実行します:
 
@@ -351,39 +329,154 @@ veg_classify: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, vers
 
 ### K230 への転送・実行
 
-#### SCP で転送
+CMake の `deploy` / `run` ターゲットで転送・実行をワンコマンドで行えます（詳細は [CMake ターゲット](#cmake-targets) を参照）:
 
 ```bash
-scp build/veg_classify/veg_classify root@<K230_IP_ADDRESS>:/sharefs/
-scp apps/veg_classify/output/best.kmodel root@<K230_IP_ADDRESS>:/sharefs/veg_classify.kmodel
-scp apps/veg_classify/output/labels.txt root@<K230_IP_ADDRESS>:/sharefs/
+cmake --build build --target deploy   # ビルド + 学習 + SCP 転送
+cmake --build build --target run      # シリアル経由で実行 (Ctrl+C で終了)
 ```
 
-#### K230 bigcore (msh) で実行
+#### 手動で転送・実行する場合
 
-```
-msh /> /sharefs/veg_classify /sharefs/veg_classify.kmodel /sharefs/labels.txt
-```
+??? note "SCP + minicom による手動操作"
+    ##### SCP で転送
 
-#### キャプチャモードで実行
+    ```bash
+    scp build/veg_classify root@<K230_IP>:/sharefs/veg_classify/
+    scp build/output/best.kmodel root@<K230_IP>:/sharefs/veg_classify/veg_classify.kmodel
+    scp build/output/labels.txt root@<K230_IP>:/sharefs/veg_classify/
+    ```
 
-```
-msh /> mkdir /sharefs/calib
-msh /> /sharefs/veg_classify /sharefs/veg_classify.kmodel /sharefs/labels.txt /sharefs/calib
-```
+    ##### K230 bigcore (msh) で実行
+
+    ```
+    msh /> /sharefs/veg_classify/veg_classify /sharefs/veg_classify/veg_classify.kmodel /sharefs/veg_classify/labels.txt
+    ```
+
+    ##### キャプチャモードで実行
+
+    ```
+    msh /> mkdir /sharefs/calib
+    msh /> /sharefs/veg_classify/veg_classify /sharefs/veg_classify/veg_classify.kmodel /sharefs/veg_classify/labels.txt /sharefs/calib
+    ```
+
+    ##### シリアル接続
+
+    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1`、115200 bps
+
+    ```bash
+    minicom -D /dev/ttyACM1 -b 115200
+    ```
 
 !!! tip "キャリブレーション用キャプチャ"
     `capture_dir` を指定して実行し、実環境で 'c' + Enter を数回押して画像をキャプチャします。
     キャプチャした画像を PC に転送して `step3 --calib-dir` のキャリブレーションデータとして使用します。
 
     ```bash
-    scp root@<K230_IP_ADDRESS>:/sharefs/calib/*.png ./calib/
+    scp root@<K230_IP>:/sharefs/calib/*.png ./calib/
     python apps/veg_classify/scripts/step3_compile_kmodel.py --calib-dir ./calib/
     ```
 
-!!! tip "シリアル接続"
-    - **Bigcore (RT-Smart msh)**: `/dev/ttyACM1`、115200 bps
+---
 
-    ```bash
-    minicom -D /dev/ttyACM1 -b 115200
-    ```
+## CMake ターゲット { #cmake-targets }
+
+### 設定
+
+```bash
+cmake -B build -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake"
+```
+
+### ターゲット一覧
+
+| ターゲット | コマンド | 説明 |
+|-----------|---------|------|
+| (デフォルト) | `cmake --build build` | C++ バイナリのビルド |
+| `train` | `cmake --build build --target train` | モデル学習 (データ未変更時はスキップ) |
+| `deploy` | `cmake --build build --target deploy` | ビルド + 学習 + K230 への SCP 転送 |
+| `run` | `cmake --build build --target run` | シリアル経由で K230 実行 (Ctrl+C で終了) |
+
+### train
+
+venv 作成・依存パッケージインストール・データ変更検知・学習を自動で行います:
+
+```bash
+cmake --build build --target train
+```
+
+動作:
+
+1. `.venv` が無ければ作成し、`requirements.txt` の依存パッケージをインストール
+2. データセットのファイル構成をハッシュ化し、前回と比較
+3. 変更がなければ学習をスキップ（`Dataset unchanged. Skipping training.`）
+4. 変更があれば `train.py` を実行
+
+外部データセットを使う場合は `DATA_DIR` オプションで指定できます:
+
+```bash
+cmake -B build -S apps/veg_classify \
+  -DCMAKE_TOOLCHAIN_FILE="$(pwd)/cmake/toolchain-k230-rtsmart.cmake" \
+  -DDATA_DIR=/path/to/custom/dataset
+```
+
+!!! tip "変更検知の仕組み"
+    `check_data_hash.sh` がデータディレクトリ内の全ファイルのパスとサイズから MD5 ハッシュを計算します。ファイル内容は読まないため、大量データでも高速に動作します。ファイルの追加・削除・サイズ変更を検知できます。
+
+### deploy
+
+バイナリのビルド、モデル学習、K230 への SCP 転送を一括実行します:
+
+```bash
+cmake --build build --target deploy
+```
+
+転送されるファイル:
+
+| ローカル | K230 上のパス |
+|---------|-------------|
+| `build/veg_classify` | `/sharefs/veg_classify/veg_classify` |
+| `build/output/best.kmodel` | `/sharefs/veg_classify/veg_classify.kmodel` |
+| `build/output/labels.txt` | `/sharefs/veg_classify/labels.txt` |
+
+K230 の IP アドレスは littlecore シリアル (`/dev/ttyACM0`) 経由で自動検出されます。手動指定も可能です:
+
+```bash
+cmake build -DK230_IP=192.168.1.100
+cmake --build build --target deploy
+```
+
+!!! warning "自動検出が失敗する場合"
+    littlecore のシリアルポートを picocom 等で開いていると自動検出できません。picocom を閉じるか、`K230_IP` を手動設定してください。
+
+### run
+
+シリアルポート経由で K230 bigcore (msh) にコマンドを送信し、出力をリアルタイム表示します:
+
+```bash
+cmake --build build --target run
+```
+
+- キーボード入力はそのまま K230 に転送されます（`q` + Enter でアプリ終了）
+- **Ctrl+C** でシリアル接続を切断
+- `run` 終了後も picocom/minicom で正常に接続可能です
+
+!!! warning "ポート占有エラー"
+    minicom/picocom が `/dev/ttyACM1` を使用中の場合はエラーになります。先に閉じてから実行してください。
+
+### K230 接続設定
+
+CMake キャッシュ変数で接続先をカスタマイズできます:
+
+| 変数 | デフォルト | 説明 |
+|------|-----------|------|
+| `K230_IP` | (空 = 自動検出) | littlecore の IP アドレス |
+| `K230_USER` | `root` | SSH ユーザー |
+| `K230_DEPLOY_DIR` | `/sharefs/veg_classify` | 転送先ディレクトリ |
+| `K230_SERIAL` | `/dev/ttyACM1` | bigcore シリアルポート (run 用) |
+| `K230_SERIAL_LC` | `/dev/ttyACM0` | littlecore シリアル (IP 自動検出用) |
+| `K230_BAUD` | `115200` | ボーレート |
+
+```bash
+cmake build -DK230_IP=192.168.1.100 -DK230_DEPLOY_DIR=/sharefs/myapp
+```
