@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
 project(veg_classify CXX)
 
+# Python training target (not built by default)
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND)
+    add_custom_target(train
+        COMMAND ${Python3_EXECUTABLE} train.py
+                --output-dir ${CMAKE_CURRENT_BINARY_DIR}/output
+                --data-dir ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+        USES_TERMINAL
+    )
+endif()
+
 add_executable(veg_classify
     src/main.cc
     src/model.cc
