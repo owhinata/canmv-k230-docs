@@ -1,5 +1,5 @@
-#ifndef _CLASSIFIER_H
-#define _CLASSIFIER_H
+#ifndef APPS_VEG_CLASSIFY_SRC_CLASSIFIER_H_
+#define APPS_VEG_CLASSIFY_SRC_CLASSIFIER_H_
 
 #include <string>
 #include <vector>
@@ -31,4 +31,4 @@ class Classifier : public Model {
   ClassifyResult result_;
 };
 
-#endif
+#endif  // APPS_VEG_CLASSIFY_SRC_CLASSIFIER_H_

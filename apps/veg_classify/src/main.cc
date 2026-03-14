@@ -1,36 +1,24 @@
-#include <nncase/runtime/runtime_op_utility.h>
-
-#include <atomic>
-#include <chrono>
-#include <fstream>
-#include <iostream>
-#include <thread>
-
-#include "classifier.h"
-#include "mpi_sys_api.h"
-
-// OpenCV (キャプチャ + OSD テキスト用)
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::runtime::detail;
-
-/* vicap */
 #include <fcntl.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <thread>
 
+#include "classifier.h"
 #include "k_connector_comm.h"
 #include "k_module.h"
 #include "k_sys_comm.h"
@@ -290,7 +278,6 @@ int sample_vivcap_init(void) {
   chn_attr.buffer_num = VICAP_MAX_FRAME_COUNT;
   chn_attr.buffer_size = VICAP_ALIGN_UP(
       (ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3 / 2), VICAP_ALIGN_1K);
-  ;
   vicap_chn = VICAP_CHN_ID_0;
 
   ret = kd_mpi_vicap_set_chn_attr(vicap_dev, vicap_chn, chn_attr);

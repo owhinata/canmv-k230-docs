@@ -30,8 +30,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __VO_TEST_CASE_H__
-#define __VO_TEST_CASE_H__
+#ifndef APPS_VEG_CLASSIFY_SRC_VO_TEST_CASE_H_
+#define APPS_VEG_CLASSIFY_SRC_VO_TEST_CASE_H_
 
 #include "k_type.h"
 #include "k_video_comm.h"
@@ -65,7 +65,6 @@ typedef struct {
   k_u32 func;
   // only layer0
   k_vo_scaler_attr attr;
-
 } layer_info;
 
 k_u32 vo_creat_osd_test(k_vo_osd osd, osd_info *info);
@@ -75,4 +74,4 @@ int vo_creat_layer_test(k_vo_layer chn_id, layer_info *info);
 }
 #endif /* __cplusplus */
 
-#endif
+#endif  // APPS_VEG_CLASSIFY_SRC_VO_TEST_CASE_H_

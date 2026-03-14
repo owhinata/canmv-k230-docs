@@ -1,9 +1,13 @@
-#ifndef _MODEL_H
-#define _MODEL_H
+#ifndef APPS_VEG_CLASSIFY_SRC_MODEL_H_
+#define APPS_VEG_CLASSIFY_SRC_MODEL_H_
 
 #include <nncase/functional/ai2d/ai2d_builder.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "util.h"
 
@@ -37,4 +41,4 @@ class Model {
   std::string model_name_;
   std::vector<uint8_t> kmodel_;
 };
-#endif
+#endif  // APPS_VEG_CLASSIFY_SRC_MODEL_H_

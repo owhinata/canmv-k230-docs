@@ -1,10 +1,12 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef APPS_VEG_CLASSIFY_SRC_UTIL_H_
+#define APPS_VEG_CLASSIFY_SRC_UTIL_H_
 #include <stdint.h>
 
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #define ENABLE_PROFILING 0
@@ -24,7 +26,7 @@ std::vector<T> read_binary_file(const char *file_name) {
 
 class ScopedTiming {
  public:
-  ScopedTiming(std::string info = "ScopedTiming") : m_info(info) {
+  explicit ScopedTiming(std::string info = "ScopedTiming") : m_info(info) {
     m_start = std::chrono::steady_clock::now();
   }
 
@@ -40,4 +42,4 @@ class ScopedTiming {
   std::chrono::steady_clock::time_point m_start;
   std::chrono::steady_clock::time_point m_stop;
 };
-#endif
+#endif  // APPS_VEG_CLASSIFY_SRC_UTIL_H_
