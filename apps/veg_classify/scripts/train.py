@@ -35,7 +35,8 @@ def export_onnx(model, input_shape, pth_path, onnx_path, device):
     model.to(device)
     model.eval()
     dummy = torch.randn(input_shape).to(device)
-    torch.onnx.export(model, dummy, onnx_path, opset_version=11)
+    torch.onnx.export(model, dummy, onnx_path, opset_version=11,
+                       dynamo=False)
     print(f"ONNX exported: {onnx_path}")
 
 
