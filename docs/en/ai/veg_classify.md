@@ -62,11 +62,11 @@ The sample dataset is included in `apps/veg_classify/data/` (from [kendryte/K230
 
 ```
 data/
-+-- bocai/       # Spinach (50 images)
-+-- changqiezi/  # Eggplant (50 images)
-+-- huluobo/     # Carrot (50 images)
-+-- xihongshi/   # Tomato (50 images)
-+-- xilanhua/    # Broccoli (50 images)
++-- broccoli/    # Broccoli (50 images)
++-- carrot/      # Carrot (50 images)
++-- eggplant/    # Eggplant (50 images)
++-- spinach/     # Spinach (50 images)
++-- tomato/      # Tomato (50 images)
 ```
 
 To use a custom dataset, organize it in the same folder structure (category-named directories containing image files).

@@ -62,11 +62,11 @@ pip install -r requirements.txt
 
 ```
 data/
-├── bocai/       # ほうれん草 (50枚)
-├── changqiezi/  # 長ナス (50枚)
-├── huluobo/     # にんじん (50枚)
-├── xihongshi/   # トマト (50枚)
-└── xilanhua/    # ブロッコリー (50枚)
+├── broccoli/    # ブロッコリー (50枚)
+├── carrot/      # にんじん (50枚)
+├── eggplant/    # ナス (50枚)
+├── spinach/     # ほうれん草 (50枚)
+└── tomato/      # トマト (50枚)
 ```
 
 カスタムデータセットを使う場合は、同じフォルダ構成（カテゴリ名ディレクトリ + 画像ファイル）で配置してください。
