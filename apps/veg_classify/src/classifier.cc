@@ -43,8 +43,10 @@ Classifier::Classifier(const char *kmodel_file, const char *labels_file,
                              typecode_t::dt_uint8, typecode_t::dt_uint8};
   ai2d_crop_param_t crop_param{false, 0, 0, 0, 0};
   ai2d_shift_param_t shift_param{false, 0};
-  ai2d_pad_param_t pad_param{false, {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
-                             ai2d_pad_mode::constant, {0, 0, 0}};
+  ai2d_pad_param_t pad_param{false,
+                             {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+                             ai2d_pad_mode::constant,
+                             {0, 0, 0}};
   ai2d_resize_param_t resize_param{true, ai2d_interp_method::tf_bilinear,
                                    ai2d_interp_mode::half_pixel};
   ai2d_affine_param_t affine_param{false};
@@ -108,8 +110,8 @@ void Classifier::Postprocess() {
   }
 
   // Argmax
-  int max_idx = static_cast<int>(
-      std::max_element(output, output + num_classes) - output);
+  int max_idx =
+      static_cast<int>(std::max_element(output, output + num_classes) - output);
 
   result_.class_id = max_idx;
   result_.confidence = output[max_idx];

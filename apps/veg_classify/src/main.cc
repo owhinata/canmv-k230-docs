@@ -450,8 +450,8 @@ int main(int argc, char *argv[]) {
 
       // Capture if requested
       if (capture_requested.load() && capture_dir != nullptr) {
-        save_frame_as_png(vbvaddr, ISP_CHN1_HEIGHT, ISP_CHN1_WIDTH,
-                          capture_dir, capture_count++);
+        save_frame_as_png(vbvaddr, ISP_CHN1_HEIGHT, ISP_CHN1_WIDTH, capture_dir,
+                          capture_count++);
         capture_requested.store(false);
       }
 
@@ -480,20 +480,19 @@ int main(int argc, char *argv[]) {
 
   kd_mpi_vo_disable_video_layer(K_VO_LAYER1);
 
-vicap_init_error:
-  {
-    k_mpp_chn vicap_mpp_chn;
-    k_mpp_chn vo_mpp_chn;
-    vicap_mpp_chn.mod_id = K_ID_VI;
-    vicap_mpp_chn.dev_id = vicap_dev;
-    vicap_mpp_chn.chn_id = vicap_chn;
+vicap_init_error: {
+  k_mpp_chn vicap_mpp_chn;
+  k_mpp_chn vo_mpp_chn;
+  vicap_mpp_chn.mod_id = K_ID_VI;
+  vicap_mpp_chn.dev_id = vicap_dev;
+  vicap_mpp_chn.chn_id = vicap_chn;
 
-    vo_mpp_chn.mod_id = K_ID_VO;
-    vo_mpp_chn.dev_id = K_VO_DISPLAY_DEV_ID;
-    vo_mpp_chn.chn_id = K_VO_DISPLAY_CHN_ID1;
+  vo_mpp_chn.mod_id = K_ID_VO;
+  vo_mpp_chn.dev_id = K_VO_DISPLAY_DEV_ID;
+  vo_mpp_chn.chn_id = K_VO_DISPLAY_CHN_ID1;
 
-    sample_vicap_unbind_vo(vicap_mpp_chn, vo_mpp_chn);
-  }
+  sample_vicap_unbind_vo(vicap_mpp_chn, vo_mpp_chn);
+}
   usleep(1000 * display_ms);
 
   ret = kd_mpi_vb_exit();

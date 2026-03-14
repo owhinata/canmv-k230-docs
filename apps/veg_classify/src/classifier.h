@@ -14,8 +14,8 @@ struct ClassifyResult {
 
 class Classifier : public Model {
  public:
-  Classifier(const char *kmodel_file, const char *labels_file,
-             size_t channel, size_t height, size_t width);
+  Classifier(const char *kmodel_file, const char *labels_file, size_t channel,
+             size_t height, size_t width);
   ~Classifier();
   ClassifyResult GetResult() const { return result_; }
 
